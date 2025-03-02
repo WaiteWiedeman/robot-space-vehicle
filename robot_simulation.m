@@ -13,6 +13,11 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
         case "stifflr"
             opts = odeset('RelTol',1e-4,'AbsTol',1e-5); 
             [t,x] = ode15s(@(t,x) robot_system(t, x, sysParams, ctrlParams), tSpan, x0,opts);
+        case "GA"
+            startTime = datetime;
+            stopTime = 60; % end sim in 60 seconds
+            opts = odeset('RelTol',1e-7,'AbsTol',1e-9,'OutputFcn', @(t, y, flag) myOutputFcn(t, y, flag, startTime, stopTime));
+            [t,x] = ode15s(@(t,x) robot_system(t, x, sysParams, ctrlParams), tSpan, x0, opts);
     end
     [t,x] = select_samples(ctrlParams, t, x);
     numTime = length(t);
@@ -76,4 +81,9 @@ function [ts, xs] = select_samples(ctrlParams, t, x)
             ts = t;
             xs = x;
     end
+end
+
+function status = myOutputFcn(t, y, flag, startTime, stopTime)
+    currentTime = datetime;
+    status = double(seconds(currentTime-startTime) > stopTime);
 end
