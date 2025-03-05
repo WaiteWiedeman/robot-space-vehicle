@@ -11,6 +11,7 @@ function F = force_function(t, x, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om
     ti(end+1) = t;
 
     F = zeros(5,1);
+    Flim = 300;
 
     xv = x(1); % vehicle x position
     xvd = x(2); % vehicle x velocity
@@ -32,45 +33,45 @@ function F = force_function(t, x, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om
     e1(end+1) = Xv - xv;
     e1d = Xvd - xvd;
     F(1) = PID1(1)*e1(end) + PID1(2)*trapz(ti,e1,2) + PID1(3)*e1d;
-    if F(1) > 200
-        F(1) = 200;
-    elseif F(1) < -200
-        F(1) = -200;
+    if F(1) > Flim
+        F(1) = Flim;
+    elseif F(1) < -Flim
+        F(1) = -Flim;
     end
 
     e2(end+1) = Yv - yv;
     e2d = Yvd - yvd;
     F(2) = PID2(1)*e2(end) + PID2(2)*trapz(ti,e2,2) + PID2(3)*e2d;
-    if F(2) > 200
-        F(2) = 200;
-    elseif F(2) < -200
-        F(2) = -200;
+    if F(2) > Flim
+        F(2) = Flim;
+    elseif F(2) < -Flim
+        F(2) = -Flim;
     end
 
     e3(end+1) = Alv - alv;
     e3d = Alvd - alvd;
     F(3) = PID3(1)*e3(end) + PID3(2)*trapz(ti,e3,2) + PID3(3)*e3d;
-    if F(3) > 200
-        F(3) = 200;
-    elseif F(3) < -200
-        F(3) = -200;
+    if F(3) > Flim
+        F(3) = Flim;
+    elseif F(3) < -Flim
+        F(3) = -Flim;
     end
 
     e4(end+1) = Th1 - th1;
     e4d = Om1 - th1d;
     F(4) = PID4(1)*e4(end) + PID4(2)*trapz(ti,e4,2) + PID4(3)*e4d;
-    if F(4) > 200
-        F(4) = 200;
-    elseif F(4) < -200
-        F(4) = -200;
+    if F(4) > Flim
+        F(4) = Flim;
+    elseif F(4) < -Flim
+        F(4) = -Flim;
     end
 
     e5(end+1) = Th2 - th2;
     e5d = Om2 - th2d;
     F(5) = PID5(1)*e5(end) + PID5(2)*trapz(ti,e5,2) + PID5(3)*e5d;
-    if F(5) > 200
-        F(5) = 200;
-    elseif F(5) < -200
-        F(5) = -200;
+    if F(5) > Flim
+        F(5) = Flim;
+    elseif F(5) < -Flim
+        F(5) = -Flim;
     end
 end
