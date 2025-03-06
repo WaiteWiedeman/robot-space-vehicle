@@ -5,14 +5,14 @@ close all; clear; clc;
 sysParams = params_system();
 ctrlParams = params_control();
 ctrlParams.method = "origin";
-ctrlParams.solver = "nonstiff"; % "stifflr" (low-res) or "stiffhr" (high-res) or "nonstiff"
-controller = load("best_controller2.mat").BestChrom;
+ctrlParams.solver = "GA"; % "stifflr" (low-res) or "stiffhr" (high-res) or "nonstiff"
+controller = load("best_controller3.mat").BestChrom;
 ctrlParams.PID1 = controller(1:3);
 ctrlParams.PID2 = controller(4:6);
 ctrlParams.PID3 = controller(7:9);
 ctrlParams.PID4 = controller(10:12);
 ctrlParams.PID5 = controller(13:15);
-tSpan = [0,30]; %[0,20]; %0:0.01:15;
+tSpan = [0,20]; %[0,20]; %0:0.01:15;
 
 %% run simulation and plot states, forces, and states against reference
 theta = 2*pi*rand;
@@ -63,10 +63,11 @@ plot_endeffector([xend yend],y_simscape(:,15:16)) %y(:,15:16)
 
 %% Tune PID w/ GA
 N_monte_carlo = 100;
-tSpan = [0,20];
-Ts_lim = 10;
+tSpan = [0,30];
+Ts_lim = 20;
+numsteps = 200;
 ctrlParams.solver = "GA";
-myObj = @(gene) fitnessfun(gene, N_monte_carlo,tSpan,Ts_lim,ctrlParams,sysParams);
+myObj = @(gene) fitnessfun(gene, N_monte_carlo,tSpan,Ts_lim,numsteps,ctrlParams,sysParams);
 % GA parameters
 Pc = 0.85;
 fitfun = @(x) myObj(x);
@@ -249,7 +250,7 @@ function plot_endeffector(x,refs)
 
 end
 
-function [fit]  = fitnessfun(gene, N_monte_carlo,tSpan,Ts_lim,ctrlParams,sysParams) %,Rise_thresh ,POlim,Ts_lim
+function [fit]  = fitnessfun(gene, N_monte_carlo,tSpan,Ts_lim,numsteps,ctrlParams,sysParams) %,Rise_thresh ,POlim,Ts_lim
 
 ctrlParams.PID1 = gene(1:3);
 ctrlParams.PID2 = gene(4:6);
@@ -279,7 +280,6 @@ e4 = zeros(1,N_monte_carlo);
 e5 = zeros(1,N_monte_carlo);
 exend = zeros(1,N_monte_carlo);
 eyend = zeros(1,N_monte_carlo);
-numsteps = 300;
 
 for sim_n = 1:N_monte_carlo
     theta = 2*pi*rand;
@@ -295,7 +295,7 @@ for sim_n = 1:N_monte_carlo
     y = robot_simulation(tSpan, x0, sysParams, ctrlParams);
     [~,~,~,~,~,~,~,~,xend,yend] = ForwardKinematics(y(:,2:6),sysParams);
     
-    if y(end,1) < tSpan(2) || length(y(:,1)) < numsteps
+    if y(end,1) < tSpan(2) || length(y(:,1)) < numsteps + 5
         disp("loop bailed")
         break
     end
@@ -379,7 +379,7 @@ disp('monte carlo done')
 if sim_n < N_monte_carlo
     fit = 1e5;
 else
-    fit = 1e3*(mean(e1)+mean(e2)+mean(e3)+mean(e4)+mean(e5)+mean(exend)+mean(eyend)+ ...
-        (sum(ts3_above_thresh)/N_monte_carlo)^2 + (sum(ts4_above_thresh)/N_monte_carlo)^2 + (sum(ts4_above_thresh)/N_monte_carlo)^2);
+    fit = 1e3*(10*(mean(e1)+mean(e2)+mean(e3)+mean(e4)+mean(e5)+mean(exend)+mean(eyend))+ ...
+        (sum(ts3_above_thresh)/N_monte_carlo)^2 + (sum(ts4_above_thresh)/N_monte_carlo)^2 + (sum(ts5_above_thresh)/N_monte_carlo)^2);
 end
 end
