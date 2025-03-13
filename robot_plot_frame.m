@@ -9,7 +9,7 @@ function [h1,h3,h4]=robot_plot_frame(ctrlParams,sysParams,t,Ycg,Xcg,alph,xend0,y
     phi4 = atan2(-b2,b1);
     % cart
     patch(Xcg+[r*cos(phi1+alph) r*cos(phi2+alph) r*cos(phi3+alph) r*cos(phi4+alph)], ...
-        Ycg+[r*sin(phi1+alph) r*sin(phi2+alph) r*sin(phi3+alph) r*sin(phi4+alph)],'k','FaceAlpha', 0, 'LineWidth',2); 
+        Ycg+[r*sin(phi1+alph) r*sin(phi2+alph) r*sin(phi3+alph) r*sin(phi4+alph)],'k','FaceColor','#808080','LineWidth',2); %,'FaceAlpha', 0 ,'k' 'FaceColor','#808080',
     
     % plots rod and blob
     h1 = plot([xend0 xend1],[yend0 yend1],'k','LineWidth', 3, 'LineStyle','-', "DisplayName", "Ground Truth");
@@ -39,7 +39,7 @@ function [h1,h3,h4]=robot_plot_frame(ctrlParams,sysParams,t,Ycg,Xcg,alph,xend0,y
         ctrlParams.b*sin(0:0.01:2*pi)*sin((2*pi/5)*t); 
     Y_ellispe = ctrlParams.refy + ctrlParams.b*sin(0:0.01:2*pi)*cos((2*pi/5)*t) + ...
         ctrlParams.a*cos(0:0.01:2*pi)*sin((2*pi/5)*t); 
-    plot(X_ellipse,Y_ellispe,'g','LineWidth', 2, 'LineStyle',"-.", "DisplayName", "Objective bound");
+    patch(X_ellipse,Y_ellispe,'g','LineWidth', 2); %, 'LineStyle',"-."
 
     % plots boundary of random objective points
     boundx = ctrlParams.xrange*cos(0:0.01:2*pi);

@@ -1,13 +1,13 @@
 function plot_compared_states(t,x,tp,xp,flag,refs)
-labels= ["$\theta_0$","$\theta_1$","$\theta_2$","$\dot{\theta}_0$","$\dot{\theta}_1$","$\dot{\theta}_2$",...
-    "$\ddot{\theta}_0$","$\ddot{\theta}_1$","$\ddot{\theta}_2$"];
+labels= ["$x_v$","$y_v$","$\alpha_v$","$\theta_1$","$\theta_2$","$\dot{x}_v$","$\dot{y}_v$","$\dot{\alpha}_v$","$\dot{\theta}_1$","$\dot{\theta}_2$",...
+    "$\ddot{x}_v$","$\ddot{y}_v$","$\ddot{\alpha}_v$","$\ddot{\theta}_1$","$\ddot{\theta}_2$"];
 switch flag
     case "position"
         figure('Position',[500,200,800,800]);
         tiledlayout("vertical","TileSpacing","tight")
         numState = size(x);
         numState = numState(2);
-        for i = 1:numState-6
+        for i = 1:numState-10
             nexttile
             plot(t,x(:,i),'b-',tp,xp(:,i),'r--',t,refs(:,i),'k:','LineWidth',2);
             hold on
@@ -20,7 +20,7 @@ switch flag
             % set(get(gca,'ylabel'),'rotation',0);
             set(gca, 'FontSize', 15);
             set(gca, 'FontName', "Arial")
-            if i == numState-6
+            if i == numState-10
                 xlabel("Time (s)");
             end
         end
@@ -30,7 +30,7 @@ switch flag
         tiledlayout("vertical","TileSpacing","tight")
         numState = size(x);
         numState = numState(2);
-        for i = 4:numState-3
+        for i = 6:numState-5
             nexttile
             plot(t,x(:,i),'b-',tp,xp(:,i),'r--','LineWidth',2);
             hold on
@@ -53,7 +53,7 @@ switch flag
         tiledlayout("vertical","TileSpacing","tight")
         numState = size(x);
         numState = numState(2);
-        for i = 7:numState
+        for i = 11:numState
             nexttile
             plot(t,x(:,i),'b-',tp,xp(:,i),'r--','LineWidth',2);
             hold on

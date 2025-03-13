@@ -1,17 +1,19 @@
 function F = force_function(t, x, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om2, ctrlParams)
     persistent ti e1 e2 e3 e4 e5
-    if t == 0
-        ti = [];
+    % disp(t)
+    if t == 0 || isempty(ti)
+        ti = t;
         e1 = [];
         e2 = [];
         e3 = [];
         e4 = [];
         e5 = [];
+    else
+        ti(end+1) = t;
     end
-    ti(end+1) = t;
-
+    % disp(size(ti))
     F = zeros(5,1);
-    Flim = 300;
+    Flim = ctrlParams.Flim;
 
     xv = x(1); % vehicle x position
     xvd = x(2); % vehicle x velocity
@@ -74,4 +76,5 @@ function F = force_function(t, x, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om
     elseif F(5) < -Flim
         F(5) = -Flim;
     end
+    % disp(F)
 end
