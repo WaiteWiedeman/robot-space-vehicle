@@ -8,7 +8,7 @@ sysParams = params_system();
 ctrlParams = params_control();
 trainParams = params_training();
 trainParams.numSamples = 100;
-trainParams.type = "dnnv2"; % "dnn6","pinn6","dnn9","pinn9"
+trainParams.type = "pinn"; % "dnn6","pinn6","dnn9","pinn9"
 trainParams.numLayers = 5;
 trainParams.numNeurons = 256;
 trainParams.numEpochs = 2;
@@ -48,6 +48,14 @@ switch trainParams.type
         monitor = trainingProgressMonitor;
         output = train_pinn_model_9(dataFile, trainParams,sysParams,ctrlParams,monitor);
         net = output.trainedNet;
+    case "pinn"
+        monitor = trainingProgressMonitor;
+        output = train_pinn_model(dataFile, trainParams,sysParams,ctrlParams,monitor);
+        net = output.trainedNet;
+    case "pgnn"
+        [xTrain,yTrain,layers,options] = train_pgnn_model(dataFile, trainParams);
+        plot(layers)
+        [net,info] = trainNetwork(xTrain,yTrain,layers,options);
     otherwise
         disp("unspecified type of model.")
 end

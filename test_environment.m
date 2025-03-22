@@ -2,12 +2,12 @@
 close all; clear; clc;
 
 %% test variables
-file = modelFile; %"pinn9_5_256_5000";
-net = load(file).net; % dnn_128_6_4000 pgnn_128_3_7000
+file = modelFile; %"pinn9_5_256_5000"; "dnnv2_model"
+net = load(file).net; % dnnv2_256_6_800
 sysParams = params_system();
 ctrlParams = params_control();
 trainParams = params_training();
-trainParams.type = "dnnv2"; % "dnn3","lstm3","pinn3","dnn6","lstm6","pinn6","dnn9", "lstm9","pinn9"
+trainParams.type = "pgnn"; % "dnn3","lstm3","pinn3","dnn6","lstm6","pinn6","dnn9", "lstm9","pinn9"
 ctrlParams.method = "origin"; % random, interval, origin
 ctrlParams.solver = "stiffhr";
 numTime = 100;
@@ -55,7 +55,7 @@ tSpan = [0,20];
 predIntervel = 20;
 numCase = 2;
 numTime = 100;
-avgErr = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, trainParams.type,1,1);
+[avgErr,errs,tPred,tSim] = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, trainParams.type,1,1);
 % avgErr = evaluate_model_with_4_states(net, sysParams, ctrlParams, trainParams, f1Max, tSpan, predInterval, numCase, numTime, trainParams.type);
 disp(avgErr)
 

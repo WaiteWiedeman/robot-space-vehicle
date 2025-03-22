@@ -1,4 +1,4 @@
-function xp = predict_motion(net, type, t, x, obj, predInterval, seqSteps, initTime)
+function [xp, tPred] = predict_motion(net, type, t, x, obj, predInterval, seqSteps, initTime)
     numTime = length(t);
     initIdx = find(t > initTime, 1, 'first'); % start where force stop acting
     switch type
@@ -14,7 +14,7 @@ function xp = predict_motion(net, type, t, x, obj, predInterval, seqSteps, initT
                 end
                 xp(i,:) = predict(net, [x0, t(i)-t0]);
             end
-        case "dnnv2"
+        case {"dnnv2","pgnn"}
             xp = zeros(numTime, 15);
             xp(1:initIdx, :) = x(1:initIdx, :);
             x0 = xp(initIdx, :);
@@ -26,7 +26,25 @@ function xp = predict_motion(net, type, t, x, obj, predInterval, seqSteps, initT
                     obj0 = x(i-1, 22:25);
                     x0 = xp(i-1, :);
                 end
+                tic
                 xp(i,:) = predict(net, [x0, obj0, t(i)-t0]);
+                tEnds(i) = toc;
+            end
+        case "pinn"
+            xp = zeros(numTime, 15);
+            xp(1:initIdx, :) = x(1:initIdx, :);
+            x0 = xp(initIdx, :);
+            obj0 = obj(initIdx, :);
+            t0 = t(initIdx);
+            for i = initIdx+1 : numTime
+                if (t(i)-t0 > predInterval)
+                    t0 = t(i-1);
+                    obj0 = x(i-1, 22:25);
+                    x0 = xp(i-1, :);
+                end
+                tic
+                xp(i,:) = extractdata(predict(net, dlarray([x0, obj0, t(i)-t0]', 'CB')));
+                tEnds(i) = toc;
             end
         case "lstm9"
             xp = zeros(numTime, 9);
@@ -145,4 +163,5 @@ function xp = predict_motion(net, type, t, x, obj, predInterval, seqSteps, initT
         otherwise
             disp("unspecified type of model");
     end
+    tPred = mean(tEnds,"all");
 end

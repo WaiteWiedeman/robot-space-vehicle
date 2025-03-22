@@ -1,9 +1,9 @@
-function avgErr = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, type, show, initTime)
+function [avgErr,errs,tPred,tSim] = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, type, show, initTime)
     % evaluate time span, larger time span will increase the simulation
     % time when complicated friction involved
     theta = linspace(0,2*pi,numCase);
     rad = linspace(0,1,numCase);
-    x0 = linspace(-1,1,numCase);
+    x0el = linspace(-1,1,numCase);
     a = linspace(0,0.25,numCase);
 
     % reference time points 
@@ -12,22 +12,24 @@ function avgErr = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan,
             errs = zeros(3*numCase, numTime);
         case {"dnn6", "lstm6", "pinn6", "pirn6"} 
             errs = zeros(6*numCase, numTime);
-        case {"dnn", "lstm9", "pinn", "pirn9", "dnnv2"} 
+        case {"dnn", "lstm9", "pgnn", "pinn", "pirn9", "dnnv2"} 
             errs = zeros(15*numCase, numTime);
         otherwise
             disp("unspecify type of model.")
     end
     for i = 1:numCase
-        x0 = [x0(i); 0; x0(i); 0; theta(i); 0; theta(i); 0; theta(i); 0]; % th0, th0d, th1, th1d, th2, th2d
+        x0 = [x0el(i); 0; x0el(i); 0; theta(i); 0; theta(i); 0; theta(i); 0]; % th0, th0d, th1, th1d, th2, th2d
         ctrlParams.refx = ctrlParams.xrange*rad(i)*cos(theta(i));
         ctrlParams.refy = ctrlParams.yrange*rad(i)*sin(theta(i));
         ctrlParams.a = 0.25+a(i); % target object horizontal dimension
         ctrlParams.b = 0.5-a(i); % vertical dimension
+        tic
         y = robot_simulation(tSpan, x0, sysParams, ctrlParams);
+        tEnd(i) = toc;
         t = y(:,1);
         x = y(:,2:16);
         obj = y(:,22:25);
-        [xp, rmseErr, refTime] = evaluate_single(net, t, x, obj, ctrlParams, trainParams, tSpan, predInterval, numTime, type, initTime);
+        [xp, rmseErr, refTime,tPred(i)] = evaluate_single(net, t, x, obj, ctrlParams, trainParams, tSpan, predInterval, numTime, type, initTime);
         if show
             disp("evaluate " + num2str(i) + " th case, mean square err: " + num2str(mean(rmseErr, "all")));
         end
@@ -36,13 +38,14 @@ function avgErr = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan,
                 errs(3*(i-1)+1:3*(i-1)+3,:) = rmseErr;
             case {"dnn6", "lstm6", "pinn6", "pirn6"} 
                 errs(6*(i-1)+1:6*(i-1)+6,:) = rmseErr;
-            case {"dnn", "lstm9", "pinn", "pirn9", "dnnv2"} 
+            case {"dnn", "lstm9", "pgnn", "pinn", "pirn9", "dnnv2"} 
                 errs(15*(i-1)+1:15*(i-1)+15,:) = rmseErr;    
             otherwise
                 disp("unspecify type of model.")
         end
     end
-    
+    tSim = mean(tEnd,"all");
+    tPred = mean(tPred,"all");
     avgErr = mean(errs,'all'); % one value of error for estimtation
     if show
         disp("plot time step rsme")
