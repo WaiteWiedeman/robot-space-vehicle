@@ -3,7 +3,7 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
     if ctrlParams.fixedTimeStep ~= 0
         tSpan = tSpan(1):ctrlParams.fixedTimeStep:tSpan(2);
     end
-    
+
     switch ctrlParams.solver
         case "nonstiff"
             [t,x] = ode45(@(t,x) robot_system(t, x, sysParams, ctrlParams), tSpan, x0);
@@ -21,11 +21,21 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
     end
     [t,x] = select_samples(ctrlParams, t, x);
     numTime = length(t);
-    y = zeros(numTime, 31); 
+    if ctrlParams.noise
+        xms = load("noise.mat", 'xms').xms;
+        y = zeros(numTime, 41);
+    else
+        y = zeros(numTime, 31); 
+    end
     for i = 1 : numTime
         [Xd, Yd, Xdd, Ydd, Xv, Xvd, Yv, Yvd] = referenceTrajectory(t(i), ctrlParams,sysParams);
         [Alv,Th1,Th2,Alvd,Om1,Om2] = InverseKinematics(Xd,Yd,Xdd,Ydd,Xv,Xvd,Yv,Yvd);
-        F = force_function(t(i), x(i,:), Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om2, ctrlParams);
+        if ctrlParams.noise
+            xm = xms(:,i);
+            F = force_function(t(i), xm', Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om2, ctrlParams);
+        else
+            F = force_function(t(i), x(i,:), Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om2, ctrlParams);
+        end
         xdot = robot_xdot(x(i,:), F, sysParams);
         y(i,1) = t(i); % t
         y(i,2) = x(i, 1); % xv
@@ -58,6 +68,12 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
         y(i,29) = Alv; % desired vehicle pitch angle
         y(i,30) = Th1; % Th1 desired
         y(i,31) = Th2; % Th2 desired 
+        if ctrlParams.noise
+            y(i,32:41) = xm';
+        end
+    end
+    if exist("noise.mat", 'file') == 2
+        % delete("noise.mat")
     end
 end
 

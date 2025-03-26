@@ -5,26 +5,35 @@ close all; clear; clc;
 sysParams = params_system();
 ctrlParams = params_control();
 ctrlParams.method = "origin";
-ctrlParams.solver = "GA"; % "stifflr" (low-res) or "stiffhr" (high-res) or "nonstiff"
-controller = load("best_controller3.mat").BestChrom;
-ctrlParams.PID1 = controller(1:3);
-ctrlParams.PID2 = controller(4:6);
-ctrlParams.PID3 = controller(7:9);
-ctrlParams.PID4 = controller(10:12);
-ctrlParams.PID5 = controller(13:15);
+ctrlParams.solver = "stifflr"; % "stifflr" (low-res) or "stiffhr" (high-res) or "nonstiff"
+if exist("noise.mat", 'file') == 2
+    delete("noise.mat")
+end
+ctrlParams.noise = 1;
+ctrlParams.sigma = 0.00000000001;
+% controller = load("best_controller6.mat").BestChrom;
+% ctrlParams.PID1 = controller(1:3);
+% ctrlParams.PID1(3) = 0; %ctrlParams.PID1(3)/3;
+% ctrlParams.PID2 = controller(4:6);
+% ctrlParams.PID2(3) = 0; %ctrlParams.PID2(3)/3;
+% ctrlParams.PID3 = controller(7:9);
+% ctrlParams.PID3(3) = 0; %ctrlParams.PID3(3)/3;
+% ctrlParams.PID4 = controller(10:12);
+% ctrlParams.PID4(3) = 0; %ctrlParams.PID4(3)/3;
+% ctrlParams.PID5 = ctrlParams.PID4; %controller(13:15);
 tSpan = [0,20]; %[0,20]; %0:0.01:15;
 
 %% run simulation and plot states, forces, and states against reference
-theta = 2*pi*rand;
-rad = sqrt(rand);
-ctrlParams.refx = ctrlParams.xrange*rad*cos(theta);
-ctrlParams.refy = ctrlParams.yrange*rad*sin(theta);
-ctrlParams.phi = 2*pi*rand;
-ctrlParams.a = 0.25+rand*0.25; % target object horizontal dimension
-ctrlParams.b = 0.25+rand*0.25; % vertical dimension
-x0 = [-1; -1; 0; 0; 0] + [2; 2; 2*pi; 2*pi; 2*pi].*rand(5,1); % th0, th1, th2
-x0 = [x0(1); 0; x0(2); 0; x0(3); 0; x0(4); 0; x0(5); 0]; % th0, th0d, th1, th1d, th2, th2d
-% x0 = zeros(10,1); % th0, th0d, th1, th1d, th2, th2d
+% theta = 2*pi*rand;
+% rad = sqrt(rand);
+% ctrlParams.refx = ctrlParams.xrange*rad*cos(theta);
+% ctrlParams.refy = ctrlParams.yrange*rad*sin(theta);
+% ctrlParams.phi = 2*pi*rand;
+% ctrlParams.a = 0.25+rand*0.25; % target object horizontal dimension
+% ctrlParams.b = 0.25+rand*0.25; % vertical dimension
+% x0 = [-1; -1; 0; 0; 0] + [2; 2; 2*pi; 2*pi; 2*pi].*rand(5,1); % th0, th1, th2
+% x0 = [x0(1); 0; x0(2); 0; x0(3); 0; x0(4); 0; x0(5); 0]; % th0, th0d, th1, th1d, th2, th2d
+x0 = zeros(10,1); % th0, th0d, th1, th1d, th2, th2d
 
 y = robot_simulation(tSpan, x0, sysParams, ctrlParams);
 
@@ -50,6 +59,13 @@ info3 = lsiminfo(y(:,4),y(:,1));
 % disp(y(end,3)-y(end,17))
 % disp(y(end,4)-y(end,18))
 
+%%
+plot_compared_states(y(:,1),y(:,2:16),y(:,1),y(:,32:41),"position",y(:,27:31));
+
+% plot_compared_states(y(:,1),y(:,2:16),y(:,1),y(:,2:16) + 0.01*randn(size(y(:,2:16))),"position",y(:,27:31));
+% plot_compared_states(y(:,1),y(:,2:16),y(:,1),y(:,2:16) + 0.01*randn(size(y(:,2:16))),"velocity",y(:,27:31));
+% plot_compared_states(y(:,1),y(:,2:16),y(:,1),y(:,2:16) + 0.01*randn(size(y(:,2:16))),"acceleration",y(:,27:31));
+
 %% run simscape model and plot states, forces, and states against reference for simscape model
 y_simscape = run_simscape();
 
@@ -67,6 +83,8 @@ tSpan = [0,30];
 Ts_lim = 20;
 numsteps = 200;
 ctrlParams.solver = "GA";
+ctrlParams.noise = 1;
+ctrlParams.Flim = 100000;
 myObj = @(gene) fitnessfun(gene, N_monte_carlo,tSpan,Ts_lim,numsteps,ctrlParams,sysParams);
 % GA parameters
 Pc = 0.85;
@@ -79,7 +97,7 @@ b       = [];
 Aeq     = [];               
 beq     = [];
 lb      = 0*ones(1,15);
-ub      = 3000*ones(1,15);
+ub      = 100*ones(1,15);
 nonlcon = [];
 options = optimoptions('ga', 'PopulationSize', PopSize, 'MaxGenerations',...
     MaxGens,'PlotFcn',{@gaplotbestf,@gaplotscores},'UseParallel',true);

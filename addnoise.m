@@ -1,4 +1,8 @@
-function x = addnoise(x, ctrlParams)
+function xm = addnoise(x, ctrlParams)
 sz = size(x);
 sig = ctrlParams.sigma;
-x = x + sig*randn(sz);
+xm = x + sig*randn(sz); %max(x,[],"all")*
+% disp("addnoise")
+% disp(xm)
+% disp(xm-x)
+
