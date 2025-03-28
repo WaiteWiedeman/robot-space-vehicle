@@ -22,7 +22,6 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
     [t,x] = select_samples(ctrlParams, t, x);
     numTime = length(t);
     if ctrlParams.noise
-        xms = load("noise.mat", 'xms').xms;
         y = zeros(numTime, 41);
     else
         y = zeros(numTime, 31); 
@@ -31,8 +30,8 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
         [Xd, Yd, Xdd, Ydd, Xv, Xvd, Yv, Yvd] = referenceTrajectory(t(i), ctrlParams,sysParams);
         [Alv,Th1,Th2,Alvd,Om1,Om2] = InverseKinematics(Xd,Yd,Xdd,Ydd,Xv,Xvd,Yv,Yvd);
         if ctrlParams.noise
-            xm = xms(:,i);
-            F = force_function(t(i), xm', Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om2, ctrlParams);
+            xm = addnoise(t(i), x(i,:), ctrlParams);
+            F = force_function(t(i), xm, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om2, ctrlParams);
         else
             F = force_function(t(i), x(i,:), Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om2, ctrlParams);
         end
@@ -69,11 +68,17 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
         y(i,30) = Th1; % Th1 desired
         y(i,31) = Th2; % Th2 desired 
         if ctrlParams.noise
-            y(i,32:41) = xm';
+            y(i,32) = xm(1);
+            y(i,33) = xm(3);
+            y(i,34) = xm(5);
+            y(i,35) = xm(7);
+            y(i,36) = xm(9);
+            y(i,37) = xm(2);
+            y(i,38) = xm(4);
+            y(i,39) = xm(6);
+            y(i,40) = xm(8);
+            y(i,41) = xm(10);
         end
-    end
-    if exist("noise.mat", 'file') == 2
-        % delete("noise.mat")
     end
 end
 

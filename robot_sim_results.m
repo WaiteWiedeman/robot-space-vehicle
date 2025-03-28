@@ -6,21 +6,7 @@ sysParams = params_system();
 ctrlParams = params_control();
 ctrlParams.method = "origin";
 ctrlParams.solver = "stifflr"; % "stifflr" (low-res) or "stiffhr" (high-res) or "nonstiff"
-if exist("noise.mat", 'file') == 2
-    delete("noise.mat")
-end
-ctrlParams.noise = 1;
-ctrlParams.sigma = 0.00000000001;
-% controller = load("best_controller6.mat").BestChrom;
-% ctrlParams.PID1 = controller(1:3);
-% ctrlParams.PID1(3) = 0; %ctrlParams.PID1(3)/3;
-% ctrlParams.PID2 = controller(4:6);
-% ctrlParams.PID2(3) = 0; %ctrlParams.PID2(3)/3;
-% ctrlParams.PID3 = controller(7:9);
-% ctrlParams.PID3(3) = 0; %ctrlParams.PID3(3)/3;
-% ctrlParams.PID4 = controller(10:12);
-% ctrlParams.PID4(3) = 0; %ctrlParams.PID4(3)/3;
-% ctrlParams.PID5 = ctrlParams.PID4; %controller(13:15);
+% ctrlParams.noise = 1;
 tSpan = [0,20]; %[0,20]; %0:0.01:15;
 
 %% run simulation and plot states, forces, and states against reference
@@ -67,15 +53,27 @@ plot_compared_states(y(:,1),y(:,2:16),y(:,1),y(:,32:41),"position",y(:,27:31));
 % plot_compared_states(y(:,1),y(:,2:16),y(:,1),y(:,2:16) + 0.01*randn(size(y(:,2:16))),"acceleration",y(:,27:31));
 
 %% run simscape model and plot states, forces, and states against reference for simscape model
-y_simscape = run_simscape();
+mdl = "robot_model.slx";
+% open(mdl)
+% open_system(mdl)
+% simIn = Simulink.SimulationInput(mdl);
+% inDS = createInputDataset(mdl);
+% structs = Simulink.Bus.createMATLABStruct([ctrlParams out2]);
+% inDS{1} = ctrlParams;
+% inDS{2} = sysParams;
+% simIn = setExternalInput(simIn,inDS);
+ctrlParams = params_control();
+y_simscape = run_simscape(mdl,ctrlParams); %simIn,ctrlParams
 
-plot_states(y_simscape(:,1),y_simscape(:,2:10));
-plot_forces(y_simscape(:,1),y_simscape(:,11),y_simscape(:,12),y_simscape(:,13),y_simscape(:,14));
-plot_reference(y_simscape(:,1),y_simscape(:,2:4),y_simscape(:,15:18))
+% plot states, forces, and states against reference
+plot_states(y_simscape(:,1),y_simscape(:,2:16),"position",y_simscape(:,27:31));
+plot_states(y_simscape(:,1),y_simscape(:,2:16),"velocity",y_simscape(:,27:31));
+plot_states(y_simscape(:,1),y_simscape(:,2:16),"acceleration",y_simscape(:,27:31));
+plot_forces(y_simscape(:,1),y_simscape(:,17:21));
 
-% solve forward kinematics and plot end effector position for simscape model
-[~,~,~,~,~,~,xend,yend] = ForwardKinematics(y_simscape(:,2:4),sysParams);
-plot_endeffector([xend yend],y_simscape(:,15:16)) %y(:,15:16)
+% solve forward kinematics and plot end effector position
+[~,~,~,~,~,~,~,~,xend,yend] = ForwardKinematics(y_simscape(:,2:6),sysParams);
+plot_endeffector([xend yend],y_simscape(:,22:23)) %y(:,15:16)
 
 %% Tune PID w/ GA
 N_monte_carlo = 100;
@@ -83,7 +81,7 @@ tSpan = [0,30];
 Ts_lim = 20;
 numsteps = 200;
 ctrlParams.solver = "GA";
-ctrlParams.noise = 1;
+% ctrlParams.noise = 1;
 ctrlParams.Flim = 100000;
 myObj = @(gene) fitnessfun(gene, N_monte_carlo,tSpan,Ts_lim,numsteps,ctrlParams,sysParams);
 % GA parameters
@@ -97,7 +95,7 @@ b       = [];
 Aeq     = [];               
 beq     = [];
 lb      = 0*ones(1,15);
-ub      = 100*ones(1,15);
+ub      = 1000*ones(1,15);
 nonlcon = [];
 options = optimoptions('ga', 'PopulationSize', PopSize, 'MaxGenerations',...
     MaxGens,'PlotFcn',{@gaplotbestf,@gaplotscores},'UseParallel',true);
