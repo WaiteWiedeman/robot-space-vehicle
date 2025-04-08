@@ -5,9 +5,18 @@ close all; clear; clc;
 sysParams = params_system();
 ctrlParams = params_control();
 ctrlParams.method = "origin";
-ctrlParams.solver = "stifflr"; % "stifflr" (low-res) or "stiffhr" (high-res) or "nonstiff"
-% ctrlParams.noise = 1;
+ctrlParams.solver = "nonstifflr"; % "stifflr" (low-res) or "stiffhr" (high-res) or "nonstifflr" or "nonstiffhr"
+ctrlParams.noise = 1;
+ctrlParams.sigma = 1e-3;
 tSpan = [0,20]; %[0,20]; %0:0.01:15;
+% controller = load("best_controller3.mat");
+% ctrlParams.PID1 = controller.BestChrom(1:3);
+% ctrlParams.PID2 = controller.BestChrom(4:6);
+% ctrlParams.PID3 = controller.BestChrom(7:9);
+% ctrlParams.PID4 = controller.BestChrom(10:12);
+% ctrlParams.PID5 = controller.BestChrom(13:15);
+% ctrlParams.Flim = 100000;
+ctrlParams.Pf = 0.1;
 
 %% run simulation and plot states, forces, and states against reference
 % theta = 2*pi*rand;
@@ -54,15 +63,14 @@ plot_compared_states(y(:,1),y(:,2:16),y(:,1),y(:,32:41),"position",y(:,27:31));
 
 %% run simscape model and plot states, forces, and states against reference for simscape model
 mdl = "robot_model.slx";
-% open(mdl)
-% open_system(mdl)
-% simIn = Simulink.SimulationInput(mdl);
-% inDS = createInputDataset(mdl);
-% structs = Simulink.Bus.createMATLABStruct([ctrlParams out2]);
-% inDS{1} = ctrlParams;
-% inDS{2} = sysParams;
-% simIn = setExternalInput(simIn,inDS);
-ctrlParams = params_control();
+theta = 2*pi*rand;
+rad = sqrt(rand);
+ctrlParams.refx = ctrlParams.xrange*rad*cos(theta);
+ctrlParams.refy = ctrlParams.yrange*rad*sin(theta);
+ctrlParams.phi = 2*pi*rand;
+ctrlParams.a = 0.25+rand*0.25; % target object horizontal dimension
+ctrlParams.b = 0.25+rand*0.25; % vertical dimension
+ctrlParams.method = "interval";
 y_simscape = run_simscape(mdl,ctrlParams); %simIn,ctrlParams
 
 % plot states, forces, and states against reference
@@ -76,26 +84,27 @@ plot_forces(y_simscape(:,1),y_simscape(:,17:21));
 plot_endeffector([xend yend],y_simscape(:,22:23)) %y(:,15:16)
 
 %% Tune PID w/ GA
-N_monte_carlo = 100;
-tSpan = [0,30];
+N_monte_carlo = 20;
+tSpan = [0,20];
 Ts_lim = 20;
-numsteps = 200;
-ctrlParams.solver = "GA";
-% ctrlParams.noise = 1;
+numsteps = 1000;
+ctrlParams.solver = "nonstifflr";
+ctrlParams.noise = 1;
 ctrlParams.Flim = 100000;
 myObj = @(gene) fitnessfun(gene, N_monte_carlo,tSpan,Ts_lim,numsteps,ctrlParams,sysParams);
 % GA parameters
-Pc = 0.85;
+Pc = 0.95;
 fitfun = @(x) myObj(x);
-PopSize = 200;
+PopSize = 100;
 MaxGens = 200;
-nvars   = 15;
+nvars   = 16;
 A       = [];
 b       = [];
 Aeq     = [];               
 beq     = [];
-lb      = 0*ones(1,15);
+lb      = 0*ones(1,16);
 ub      = 1000*ones(1,15);
+ub      = [ub, 1];
 nonlcon = [];
 options = optimoptions('ga', 'PopulationSize', PopSize, 'MaxGenerations',...
     MaxGens,'PlotFcn',{@gaplotbestf,@gaplotscores},'UseParallel',true);
@@ -273,6 +282,7 @@ ctrlParams.PID2 = gene(4:6);
 ctrlParams.PID3 = gene(7:9);
 ctrlParams.PID4 = gene(10:12);
 ctrlParams.PID5 = gene(13:15);
+ctrlParams.Pf = gene(16);
 
 % ts1_above_thresh = zeros(1,N_monte_carlo);
 % ts2_above_thresh = zeros(1,N_monte_carlo);
@@ -311,8 +321,12 @@ for sim_n = 1:N_monte_carlo
     y = robot_simulation(tSpan, x0, sysParams, ctrlParams);
     [~,~,~,~,~,~,~,~,xend,yend] = ForwardKinematics(y(:,2:6),sysParams);
     
-    if y(end,1) < tSpan(2) || length(y(:,1)) < numsteps + 5
-        disp("loop bailed")
+    if y(end,1) < tSpan(2) 
+        disp("loop bailed: too much time")
+        break
+    end
+    if length(y(:,1)) < numsteps + 5
+        disp("loop bailed: not enough steps")
         break
     end
 
@@ -393,9 +407,9 @@ disp('monte carlo done')
 % fit = (1e2)*((sum(x_above_thresh)/N_monte_carlo)^2 + (sum(settling_time_above_thresh)/N_monte_carlo)^2 ...
 %     + (sum(u_above_thresh)/N_monte_carlo)^2 + 10*mean(e1) + 10*mean(e2) + 10*mean(e3) + 10*mean(exend) + 10*mean(eyend)); % 
 if sim_n < N_monte_carlo
-    fit = 1e5;
+    fit = 1e6;
 else
-    fit = 1e3*(10*(mean(e1)+mean(e2)+mean(e3)+mean(e4)+mean(e5)+mean(exend)+mean(eyend))+ ...
-        (sum(ts3_above_thresh)/N_monte_carlo)^2 + (sum(ts4_above_thresh)/N_monte_carlo)^2 + (sum(ts5_above_thresh)/N_monte_carlo)^2);
+    fit = 1e4*(10*(mean(e1)+mean(e2)+mean(e3)+mean(e4)+mean(e5)+mean(exend)+mean(eyend))); %+ ...
+        %(sum(ts3_above_thresh)/N_monte_carlo)^2 + (sum(ts4_above_thresh)/N_monte_carlo)^2 + (sum(ts5_above_thresh)/N_monte_carlo)^2);
 end
 end

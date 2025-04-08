@@ -23,9 +23,16 @@ function dataFile = generate_samples(sysParams, ctrlParams, trainParams)
             ctrlParams.phi = 2*pi*rand;
             ctrlParams.a = 0.25+rand*0.25; % target object horizontal dimension
             ctrlParams.b = 0.25+rand*0.25; % vertical dimension
-            x0 = [-1; -1; 0; 0; 0] + [2; 2; 2*pi; 2*pi; 2*pi].*rand(5,1); % th0, th1, th2
-            x0 = [x0(1); 0; x0(2); 0; x0(3); 0; x0(4); 0; x0(5); 0]; % th0, th0d, th1, th1d, th2, th2d
-            y = robot_simulation(tSpan, x0, sysParams, ctrlParams);
+            switch trainParams.datasource
+                case "odes"
+                    x0 = [-1; -1; 0; 0; 0] + [2; 2; 2*pi; 2*pi; 2*pi].*rand(5,1); % th0, th1, th2
+                    x0 = [x0(1); 0; x0(2); 0; x0(3); 0; x0(4); 0; x0(5); 0]; % th0, th0d, th1, th1d, th2, th2d
+                    y = robot_simulation(tSpan, x0, sysParams, ctrlParams);
+                case "simscape"
+                    mdl = "robot_model.slx";
+                    assignin('base','ctrlParams',ctrlParams)
+                    y = run_simscape(mdl,ctrlParams);
+            end
             state = y';
             fname=['data\input',num2str(i),'.mat'];
             save(fname, 'state');

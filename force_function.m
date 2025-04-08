@@ -1,20 +1,38 @@
-function F = force_function(t, x, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om2, ctrlParams)
-    persistent ti e1 e2 e3 e4 e5
+function F = force_function(t, x, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om2, noise, ctrlParams)
+    persistent ti e1 e2 e3 e4 e5 Fp count
     % disp(t)
     if t == 0 || isempty(ti)
         ti = t;
+        Fp = zeros(5,1);
         e1 = [];
         e2 = [];
         e3 = [];
         e4 = [];
         e5 = [];
+        count = 1;
     else
         ti(end+1) = t;
-    end
-    % disp(size(ti))
-    F = zeros(5,1);
-    Flim = ctrlParams.Flim;
+    end 
 
+    if count == length(noise)
+        count = 0;
+    end
+    % if length(ti)>2
+    %     if ti(end)-ti(end-1) > 0.001
+    %         count = count + 1;
+    %     end
+    % end
+    count = count + 1;
+    % disp(count)
+    % disp(size(ti))
+    Fg = zeros(5,1);
+    Flim = ctrlParams.Flim;
+    % disp("force_function")
+   
+    if ctrlParams.noise
+        x = x + noise(:,count);
+    end
+    
     xv = x(1); % vehicle x position
     xvd = x(2); % vehicle x velocity
     yv = x(3); % vehicle y position
@@ -34,47 +52,49 @@ function F = force_function(t, x, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om
 
     e1(end+1) = Xv - xv;
     e1d = Xvd - xvd;
-    F(1) = PID1(1)*e1(end) + PID1(2)*trapz(ti,e1,2) + PID1(3)*e1d;
-    if F(1) > Flim
-        F(1) = Flim;
-    elseif F(1) < -Flim
-        F(1) = -Flim;
+    Fg(1) = PID1(1)*e1(end) + PID1(2)*trapz(ti,e1,2) + PID1(3)*e1d;
+    if Fg(1) > Flim
+        Fg(1) = Flim;
+    elseif Fg(1) < -Flim
+        Fg(1) = -Flim;
     end
 
     e2(end+1) = Yv - yv;
     e2d = Yvd - yvd;
-    F(2) = PID2(1)*e2(end) + PID2(2)*trapz(ti,e2,2) + PID2(3)*e2d;
-    if F(2) > Flim
-        F(2) = Flim;
-    elseif F(2) < -Flim
-        F(2) = -Flim;
+    Fg(2) = PID2(1)*e2(end) + PID2(2)*trapz(ti,e2,2) + PID2(3)*e2d;
+    if Fg(2) > Flim
+        Fg(2) = Flim;
+    elseif Fg(2) < -Flim
+        Fg(2) = -Flim;
     end
 
     e3(end+1) = Alv - alv;
     e3d = Alvd - alvd;
-    F(3) = PID3(1)*e3(end) + PID3(2)*trapz(ti,e3,2) + PID3(3)*e3d;
-    if F(3) > Flim
-        F(3) = Flim;
-    elseif F(3) < -Flim
-        F(3) = -Flim;
+    Fg(3) = PID3(1)*e3(end) + PID3(2)*trapz(ti,e3,2) + PID3(3)*e3d;
+    if Fg(3) > Flim
+        Fg(3) = Flim;
+    elseif Fg(3) < -Flim
+        Fg(3) = -Flim;
     end
 
     e4(end+1) = Th1 - th1;
     e4d = Om1 - th1d;
-    F(4) = PID4(1)*e4(end) + PID4(2)*trapz(ti,e4,2) + PID4(3)*e4d;
-    if F(4) > Flim
-        F(4) = Flim;
-    elseif F(4) < -Flim
-        F(4) = -Flim;
+    Fg(4) = PID4(1)*e4(end) + PID4(2)*trapz(ti,e4,2) + PID4(3)*e4d;
+    if Fg(4) > Flim
+        Fg(4) = Flim;
+    elseif Fg(4) < -Flim
+        Fg(4) = -Flim;
     end
 
     e5(end+1) = Th2 - th2;
     e5d = Om2 - th2d;
-    F(5) = PID5(1)*e5(end) + PID5(2)*trapz(ti,e5,2) + PID5(3)*e5d;
-    if F(5) > Flim
-        F(5) = Flim;
-    elseif F(5) < -Flim
-        F(5) = -Flim;
+    Fg(5) = PID5(1)*e5(end) + PID5(2)*trapz(ti,e5,2) + PID5(3)*e5d;
+    if Fg(5) > Flim
+        Fg(5) = Flim;
+    elseif Fg(5) < -Flim
+        Fg(5) = -Flim;
     end
     % disp(F)
+    F = Fp + ctrlParams.Pf*(Fg-Fp);
+    Fp = F;
 end

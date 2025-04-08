@@ -3,8 +3,8 @@ function params = params_training()
     params.type = "dnn"; % "dnn3","lstm3","pinn3","dnn6","lstm6","pinn6","dnn9", "lstm9","pinn9"
     params.sequenceStep = 4; % 1 for non-lstm, 4,8,16 
     params.numUnits = 8;  % number of LSTM units
-    params.alpha = 0.001^2; % weight of physics loss
-    params.beta = 0.005; % weight of end effector loss
+    params.alpha = 0.001; % weight of physics loss
+    params.beta = 0.5; % weight of end effector loss
     params.numSamples = 500; % 100,200,300,400,500
     params.numLayers = 8; % [3,10]
     params.numNeurons = 256; % 32,64,128,256
@@ -17,4 +17,5 @@ function params = params_training()
     params.lrDropFactor = 0.2;
     params.lrDropEpoch = 40;
     params.nmPts = 128;
+    params.datasource = "odes"; % "odes" or "simscape"
 end

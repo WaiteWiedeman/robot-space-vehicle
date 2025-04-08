@@ -8,6 +8,7 @@ function params = params_control()
     params.PID4 = [1727.95110585053	6989.59605494114	675.792507516856]; %controller.BestChrom(10:12);
     params.PID5 = [1727.95110585053	6989.59605494114	675.792507516856]; %controller.BestChrom(10:12);
     params.Flim = 500;
+    params.Pf = 1;
     params.refx = 1; % center of reference trajectory in x
     params.refy = 1; % center of reference trajectory in y
     params.xrange = 4; % width of reference point range
