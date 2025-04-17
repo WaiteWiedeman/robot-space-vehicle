@@ -6,8 +6,8 @@ sysParams = params_system();
 ctrlParams = params_control();
 ctrlParams.method = "origin";
 ctrlParams.solver = "nonstifflr"; % "stifflr" (low-res) or "stiffhr" (high-res) or "nonstifflr" or "nonstiffhr"
-ctrlParams.noise = 1;
-ctrlParams.sigma = 1e-3;
+% ctrlParams.noise = 0;
+% ctrlParams.sigma = 1e-2;
 tSpan = [0,20]; %[0,20]; %0:0.01:15;
 % controller = load("best_controller3.mat");
 % ctrlParams.PID1 = controller.BestChrom(1:3);
@@ -16,19 +16,19 @@ tSpan = [0,20]; %[0,20]; %0:0.01:15;
 % ctrlParams.PID4 = controller.BestChrom(10:12);
 % ctrlParams.PID5 = controller.BestChrom(13:15);
 % ctrlParams.Flim = 100000;
-ctrlParams.Pf = 0.1;
+% ctrlParams.Pf = 1; % controller.BestChrom(16);
 
 %% run simulation and plot states, forces, and states against reference
-% theta = 2*pi*rand;
-% rad = sqrt(rand);
-% ctrlParams.refx = ctrlParams.xrange*rad*cos(theta);
-% ctrlParams.refy = ctrlParams.yrange*rad*sin(theta);
-% ctrlParams.phi = 2*pi*rand;
-% ctrlParams.a = 0.25+rand*0.25; % target object horizontal dimension
-% ctrlParams.b = 0.25+rand*0.25; % vertical dimension
-% x0 = [-1; -1; 0; 0; 0] + [2; 2; 2*pi; 2*pi; 2*pi].*rand(5,1); % th0, th1, th2
-% x0 = [x0(1); 0; x0(2); 0; x0(3); 0; x0(4); 0; x0(5); 0]; % th0, th0d, th1, th1d, th2, th2d
-x0 = zeros(10,1); % th0, th0d, th1, th1d, th2, th2d
+theta = 2*pi*rand;
+rad = sqrt(rand);
+ctrlParams.refx = ctrlParams.xrange*rad*cos(theta);
+ctrlParams.refy = ctrlParams.yrange*rad*sin(theta);
+ctrlParams.phi = 2*pi*rand;
+ctrlParams.a = 0.25+rand*0.25; % target object horizontal dimension
+ctrlParams.b = 0.25+rand*0.25; % vertical dimension
+x0 = [-1; -1; 0; 0; 0] + [2; 2; 2*pi; 2*pi; 2*pi].*rand(5,1); % th0, th1, th2
+x0 = [x0(1); 0; x0(2); 0; x0(3); 0; x0(4); 0; x0(5); 0]; % th0, th0d, th1, th1d, th2, th2d
+% x0 = zeros(10,1); % th0, th0d, th1, th1d, th2, th2d
 
 y = robot_simulation(tSpan, x0, sysParams, ctrlParams);
 
@@ -70,7 +70,7 @@ ctrlParams.refy = ctrlParams.yrange*rad*sin(theta);
 ctrlParams.phi = 2*pi*rand;
 ctrlParams.a = 0.25+rand*0.25; % target object horizontal dimension
 ctrlParams.b = 0.25+rand*0.25; % vertical dimension
-ctrlParams.method = "interval";
+% ctrlParams.method = "interval";
 y_simscape = run_simscape(mdl,ctrlParams); %simIn,ctrlParams
 
 % plot states, forces, and states against reference
@@ -87,7 +87,7 @@ plot_endeffector([xend yend],y_simscape(:,22:23)) %y(:,15:16)
 N_monte_carlo = 20;
 tSpan = [0,20];
 Ts_lim = 20;
-numsteps = 1000;
+numsteps = 400;
 ctrlParams.solver = "nonstifflr";
 ctrlParams.noise = 1;
 ctrlParams.Flim = 100000;

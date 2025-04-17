@@ -3,23 +3,28 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
     if ctrlParams.fixedTimeStep ~= 0
         tSpan = tSpan(1):ctrlParams.fixedTimeStep:tSpan(2);
     end
-
+    
+    show = 0;
     sz = size(x0);
     noise = ctrlParams.sigma*randn(sz(1),10000);
     % noise = lowpass(noise,0.1);
 
     switch ctrlParams.solver
         case "nonstifflr"
-            startTime = datetime;
-            stopTime = 60*10; % end sim in 60 seconds
-            opts = odeset('OutputFcn',@(t, y, flag) myOutputFcn(t, y, flag, startTime, stopTime));
-            % opts = odeset('OutputFcn',@odeplot);
+            % startTime = datetime;
+            % stopTime = 60*5; % end sim in 60 seconds
+            % opts = odeset('RelTol',1e-2,'AbsTol',1e-2,'OutputFcn',@(t, y, flag) myOutputFcn(t, y, flag, startTime, stopTime));
+            opts = odeset('AbsTol',1e-2); %,'OutputFcn',@odeplot ,'AbsTol',1e-5 ,'OutputFcn',@odeplot
+            if show
+                figure;
+                opts = odeset(opts,'OutputFcn',@odeplot);
+            end
             [t,x] = ode23(@(t,x) robot_system(t, x, noise, sysParams, ctrlParams), tSpan, x0,opts);
         case "nonstiffhr"
             % startTime = datetime;
             % stopTime = 60*5; % end sim in 60 seconds
             % opts = odeset('OutputFcn',@(t, y, flag) myOutputFcn(t, y, flag, startTime, stopTime));
-            opts = odeset('OutputFcn',@odeplot);
+            opts = odeset('AbsTol',1e-3); % ,'OutputFcn',@odeplot 'RelTol',1e-2,
             [t,x] = ode45(@(t,x) robot_system(t, x, noise, sysParams, ctrlParams), tSpan, x0,opts);
         case "stiffhr"
             opts = odeset('RelTol',1e-7,'AbsTol',1e-9); 

@@ -2,14 +2,14 @@
 close all; clear; clc;
 
 %% test variables
-file = modelFile; %"pinn9_5_256_5000"; "dnnv2_model"
-net = load(file).net; % dnnv2_256_6_800
+file = "model/dnnv2_5_128_101"; %"pinn9_5_256_5000"; "dnnv2_model"
+net = trainedNetwork; %load(file).net; % dnnv2_256_6_800
 sysParams = params_system();
 ctrlParams = params_control();
 trainParams = params_training();
-trainParams.type = "pgnn"; % "dnn3","lstm3","pinn3","dnn6","lstm6","pinn6","dnn9", "lstm9","pinn9"
+trainParams.type = "dnnv2"; % "dnn3","lstm3","pinn3","dnn6","lstm6","pinn6","dnn9", "lstm9","pinn9"
 ctrlParams.method = "origin"; % random, interval, origin
-ctrlParams.solver = "stiffhr";
+ctrlParams.solver = "nonstifflr";
 numTime = 100;
 tSpan = [0,25]; % [0,5] 0:0.01:5
 predInterval = tSpan(2); 
@@ -31,7 +31,7 @@ t = y(:,1);
 x = y(:,2:16);
 obj = y(:,22:25);
 ref = y(:,22:23);
-[xp, rmseErr, refTime] = evaluate_single(net, t, x, obj, ctrlParams, trainParams, tSpan, predInterval, numTime, trainParams.type,1);
+[xp, rmseErr, refTime, tPred] = evaluate_single(net, t, x, obj, ctrlParams, trainParams, tSpan, predInterval, numTime, trainParams.type,1);
 
 %% Plots
 plot_compared_states(t,x,t,xp,"position",y(:,27:31));
@@ -52,9 +52,9 @@ disp(tEnd)
 
 %% evaluate for four states
 tSpan = [0,20];
-predIntervel = 20;
-numCase = 2;
-numTime = 100;
+predInterval = 20;
+numCase = 30;
+numTime = 500;
 [avgErr,errs,tPred,tSim] = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, trainParams.type,1,1);
 % avgErr = evaluate_model_with_4_states(net, sysParams, ctrlParams, trainParams, f1Max, tSpan, predInterval, numCase, numTime, trainParams.type);
 disp(avgErr)

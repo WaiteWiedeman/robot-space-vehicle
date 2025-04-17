@@ -8,10 +8,11 @@ sysParams = params_system();
 ctrlParams = params_control();
 trainParams = params_training();
 trainParams.numSamples = 100;
-trainParams.type = "pinn"; % "dnn6","pinn6","dnn9","pinn9"
-trainParams.numLayers = 5;
+trainParams.type = "dnnv2"; % "dnn6","pinn6","dnn9","pinn9"
+trainParams.numLayers = 12;
 trainParams.numNeurons = 256;
-trainParams.numEpochs = 2;
+trainParams.datasource = "odes";
+trainParams.numEpochs = 200;
 modelFile = "model\"+trainParams.type+"_"+num2str(trainParams.numLayers)+"_"+num2str(trainParams.numNeurons)+"_"+num2str(trainParams.numSamples)+".mat";
 
 %% generate samples
@@ -21,6 +22,22 @@ end
 dataFile = generate_samples(sysParams, ctrlParams, trainParams);
 % plot(sort(fMaxRange));
 % histogram(sort(fMaxRange),trainParams.numSamples)
+
+%% plot data
+ds = load('trainingSamples.mat');
+ind = randi(length(ds.samples));
+data = load(ds.samples{ind,1}).state;
+y = data';
+
+% plot states, forces, and states against reference
+plot_states(y(:,1),y(:,2:16),"position",y(:,27:31));
+plot_states(y(:,1),y(:,2:16),"velocity",y(:,27:31));
+plot_states(y(:,1),y(:,2:16),"acceleration",y(:,27:31));
+plot_forces(y(:,1),y(:,17:21));
+
+% solve forward kinematics and plot end effector position
+[~,~,~,~,~,~,~,~,xend,yend] = ForwardKinematics(y(:,2:6),sysParams);
+plot_endeffector([xend yend],y(:,22:23)) %y(:,15:16)
 
 %% train model
 if ~exist("\model\", 'dir')
@@ -42,6 +59,7 @@ switch trainParams.type
         [net,info] = trainNetwork(xTrain,yTrain,layers,options);
     case "dnnv2"
         [xTrain,yTrain,layers,options] = train_dnnv2_model(dataFile, trainParams);
+        figure;
         plot(layers)
         [net,info] = trainNetwork(xTrain,yTrain,layers,options);
     case "pinn9"
@@ -67,6 +85,7 @@ save(modelFile, 'net');
 % save("trainingoutput",'monitor')
 
 %% test variables
+%{
 file = "best_dnn_models_5";
 net = load(file).dnn9_256_4_800; % trainedNetwork dnn9_4_512_1500
 sysParams = params_system();
@@ -115,26 +134,93 @@ numTime = 100;
 avgErr = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, trainParams.type,1,1);
 % avgErr = evaluate_model_with_4_states(net, sysParams, ctrlParams, trainParams, f1Max, tSpan, predInterval, numCase, numTime, trainParams.type);
 disp(avgErr)
-
+%}
 %% functions
-function plot_endeffector(x,xp,refs)
+function plot_forces(t,u)
+    figure('Position',[500,100,800,800]);
+    plot(t,u(:,1),'k-',t,u(:,2),'b-',t,u(:,3),'g-',t,u(:,4),'m-',t,u(:,5),'c-','LineWidth',2);
+    legend("$u_x$","$u_y$","$\tau_0$","$\tau_1$","$\tau_2$","Interpreter","latex");
+end
+
+function plot_states(t,x,flag,refs)
+labels= ["$x_v$","$y_v$","$\alpha_v$","$\theta_1$","$\theta_2$","$\dot{x}_v$","$\dot{y}_v$","$\dot{\alpha}_v$","$\dot{\theta}_1$","$\dot{\theta}_2$",...
+    "$\ddot{x}_v$","$\ddot{y}_v$","$\ddot{\alpha}_v$","$\ddot{\theta}_1$","$\ddot{\theta}_2$"];
+switch flag
+    case "position"
+        figure('Position',[500,200,800,800]);
+        tiledlayout("vertical","TileSpacing","tight")
+        numState = size(x);
+        numState = numState(2);
+        for i = 1:numState-10
+            nexttile
+            plot(t,x(:,i),'b-',t,refs(:,i),'k:','LineWidth',2);
+            hold on
+            % xline(1,'k--', 'LineWidth',1);
+            ylabel(labels(i),"Interpreter","latex");
+            set(get(gca,'ylabel'),'rotation',0);
+            set(gca, 'FontSize', 15);
+            set(gca, 'FontName', "Arial")
+            if i == numState-10
+                xlabel("Time (s)");
+            end
+        end
+        legend("Ground Truth","Reference","Location","eastoutside","FontName","Arial");
+    case "velocity"
+        figure('Position',[500,200,800,800]);
+        tiledlayout("vertical","TileSpacing","tight")
+        numState = size(x);
+        numState = numState(2);
+        for i = 6:numState-5
+            nexttile
+            plot(t,x(:,i),'b-','LineWidth',2);
+            hold on
+            % xline(1,'k--', 'LineWidth',1);
+            ylabel(labels(i),"Interpreter","latex");
+            set(get(gca,'ylabel'),'rotation',0);
+            set(gca, 'FontSize', 15);
+            set(gca, 'FontName', "Arial")
+            if i == numState-5
+                xlabel("Time (s)");
+            end
+        end
+        % legend("Ground Truth","Location","eastoutside","FontName","Arial");
+    case "acceleration"
+        figure('Position',[500,200,800,800]);
+        tiledlayout("vertical","TileSpacing","tight")
+        numState = size(x);
+        numState = numState(2);
+        for i = 11:numState
+            nexttile
+            plot(t,x(:,i),'b-','LineWidth',2);
+            hold on
+            % xline(1,'k--', 'LineWidth',1);
+            ylabel(labels(i),"Interpreter","latex");
+            set(get(gca,'ylabel'),'rotation',0);
+            set(gca, 'FontSize', 15);
+            set(gca, 'FontName', "Arial")
+            if i == numState
+                xlabel("Time (s)");
+            end
+        end
+        % legend("Ground Truth","Prediction","Location","eastoutside","FontName","Arial");
+end
+end
+
+function plot_endeffector(x,refs)
     refClr = "blue";
     figure('Position',[500,100,800,800]);
     tiledlayout("vertical","TileSpacing","tight")
-    plot(x(:,1),x(:,2),'Color',refClr,'LineWidth',2);
-    hold on 
-    plot(xp(:,1),xp(:,2),'r--','LineWidth',2)
+    plot(x(:,1),x(:,2),'b-o','LineWidth',2);
     if refs ~= 0
         hold on
         plot(refs(:,1),refs(:,2),'*','LineWidth',2);
     end
     axis padded
-    legend("Ground Truth","Prediction","Reference","Location","best","FontName","Arial");
-    title('End Effector Position')
     % xline(1,'k--','LineWidth',2);
-    ylabel("Y [m]");
-    xlabel("X [m]");
+    ylabel("Y");
+    xlabel("X");
     set(get(gca,'ylabel'),'rotation',0);
     set(gca, 'FontSize', 15);
     set(gca, 'FontName', 'Arial');
+
 end

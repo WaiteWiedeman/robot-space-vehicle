@@ -23,7 +23,7 @@ function [xp, tPred] = predict_motion(net, type, t, x, obj, predInterval, seqSte
             for i = initIdx+1 : numTime
                 if (t(i)-t0) > predInterval
                     t0 = t(i-1);
-                    obj0 = x(i-1, 22:25);
+                    obj0 = obj(i-1, :);
                     x0 = xp(i-1, :);
                 end
                 tic
