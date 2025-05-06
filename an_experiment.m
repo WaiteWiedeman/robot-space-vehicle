@@ -8,11 +8,11 @@ sysParams = params_system();
 ctrlParams = params_control();
 trainParams = params_training();
 trainParams.numSamples = 100;
-trainParams.type = "dnnv2"; % "dnn6","pinn6","dnn9","pinn9"
-trainParams.numLayers = 12;
+trainParams.type = "pinn"; % "dnn6","pinn6","dnn9","pinn9"
+trainParams.numLayers = 5;
 trainParams.numNeurons = 256;
 trainParams.datasource = "odes";
-trainParams.numEpochs = 200;
+% trainParams.numEpochs = 1;
 modelFile = "model\"+trainParams.type+"_"+num2str(trainParams.numLayers)+"_"+num2str(trainParams.numNeurons)+"_"+num2str(trainParams.numSamples)+".mat";
 
 %% generate samples
@@ -59,6 +59,11 @@ switch trainParams.type
         [net,info] = trainNetwork(xTrain,yTrain,layers,options);
     case "dnnv2"
         [xTrain,yTrain,layers,options] = train_dnnv2_model(dataFile, trainParams);
+        figure;
+        plot(layers)
+        [net,info] = trainNetwork(xTrain,yTrain,layers,options);
+    case "dnnv2_10s"
+        [xTrain,yTrain,layers,options] = train_dnnv2_model_10state(dataFile, trainParams);
         figure;
         plot(layers)
         [net,info] = trainNetwork(xTrain,yTrain,layers,options);

@@ -31,7 +31,7 @@ function output = train_pinn_model(sampleFile, trainParams,sysParams,ctrlParams,
     for i = 1:numSamples
         data = load(ds.samples{i,1}).state;
         t = data(1,:);
-        x = data(2:16, :); % q1,q2,q1_dot,q2_dot
+        x = data(2:11, :); % q1,q2,q1_dot,q2_dot
         obj = data(22:25,:);
         for tInit = initTimes
             initIdx = find(t > tInit, 1, 'first');
@@ -65,7 +65,7 @@ function output = train_pinn_model(sampleFile, trainParams,sysParams,ctrlParams,
     disp(num2str(length(cell2mat(xTrain))) + " samples are generated for training.");
     
     % Create neural network
-    numStates = 15;
+    numStates = 10;
     layers = [
         featureInputLayer(numStates+5, "Name", "input")
         ];
@@ -115,7 +115,7 @@ function output = train_pinn_model(sampleFile, trainParams,sysParams,ctrlParams,
                     "ExecutionEnvironment"];
     monitor.XLabel = "Iteration";
     
-    trainParams.alpha = trainParams.alpha^2;
+    trainParams.alpha = trainParams.alpha^3;
     trainParams.beta = trainParams.beta*0.01;
 
     net = train_adam_update(net, xTrain, yTrain, trainParams, sysParams, monitor);
@@ -229,7 +229,7 @@ function [loss, gradients] = modelLoss(net, X, T, sysParams, trainParams)
     boundaryIds = [ids+1 ids sz(2)];
 
     % disp(size(X))
-    [fY,fT,endEff,endEffTarget] = physicsloss(X(20,:),T,Z,boundaryIds,sysParams);
+    [fY,fT,endEff,endEffTarget] = physicsloss(X(15,:),T,Z,boundaryIds,sysParams);
     % disp(size(fY))
     % disp(size(fT))
     % disp(size(endEff))
@@ -243,9 +243,9 @@ function [loss, gradients] = modelLoss(net, X, T, sysParams, trainParams)
     % total loss
     physicLoss = mse(forcePreds, forceTargets);
     endEffloss = mse(endEffPreds, endEffTargets);
-    % disp(dataLoss)
-    % disp(physicLoss)
-    % disp(endEffloss)
+    % disp((1.0-trainParams.alpha-trainParams.beta)*dataLoss)
+    % disp(trainParams.alpha*physicLoss)
+    % disp(trainParams.beta*endEffloss)
     loss = (1.0-trainParams.alpha-trainParams.beta)*dataLoss + trainParams.alpha*physicLoss + trainParams.beta*endEffloss;
     
     gradients = dlgradient(loss, net.Learnables);
@@ -263,11 +263,6 @@ function [fY,fT,endEff,endEffTarget] = physicsloss(T,Y,Z,ids,sysParams)
     q3d = Z(8,:);
     q4d = Z(9,:);
     q5d = Z(10,:);
-    q1dd = Z(11,:);
-    q2dd = Z(12,:);
-    q3dd = Z(13,:);
-    q4dd = Z(14,:);
-    q5dd = Z(15,:);
 
     % velocities calulated as gradient of position prediction
     q1dn = gradient(q1,T);
@@ -281,6 +276,25 @@ function [fY,fT,endEff,endEffTarget] = physicsloss(T,Y,Z,ids,sysParams)
     q3ddn = gradient(q3d,T);
     q4ddn = gradient(q4d,T);
     q5ddn = gradient(q5d,T);
+    % accelerations calulated as gradient of velocity prediction
+    q1ddn2 = 4*del2(q1,T);
+    q2ddn2 = 4*del2(q2,T);
+    q3ddn2 = 4*del2(q3,T);
+    q4ddn2 = 4*del2(q4,T);
+    q5ddn2 = 4*del2(q5,T);
+    % target gradients
+    % accelerations calulated as gradient of velocity prediction
+    q1ddnT = gradient(Y(6,:),T);
+    q2ddnT = gradient(Y(7,:),T);
+    q3ddnT = gradient(Y(8,:),T);
+    q4ddnT = gradient(Y(9,:),T);
+    q5ddnT = gradient(Y(10,:),T);
+    % accelerations calulated as gradient of velocity prediction
+    q1ddn2T = 4*del2(Y(1,:),T);
+    q2ddn2T = 4*del2(Y(2,:),T);
+    q3ddn2T = 4*del2(Y(3,:),T);
+    q4ddn2T = 4*del2(Y(4,:),T);
+    q5ddn2T = 4*del2(Y(5,:),T);
 % disp(q1ddn)
     % remove values at boundary 
     q1(ids) = [];
@@ -293,11 +307,6 @@ function [fY,fT,endEff,endEffTarget] = physicsloss(T,Y,Z,ids,sysParams)
     q3d(ids) = [];
     q4d(ids) = [];
     q5d(ids) = [];
-    q1dd(ids) = [];
-    q2dd(ids) = [];
-    q3dd(ids) = [];
-    q4dd(ids) = [];
-    q5dd(ids) = [];
     q1dn(ids) = [];
     q2dn(ids) = [];
     q3dn(ids) = [];
@@ -308,12 +317,28 @@ function [fY,fT,endEff,endEffTarget] = physicsloss(T,Y,Z,ids,sysParams)
     q3ddn(ids) = [];
     q4ddn(ids) = [];
     q5ddn(ids) = [];
+    q1ddn2(ids) = [];
+    q2ddn2(ids) = [];
+    q3ddn2(ids) = [];
+    q4ddn2(ids) = [];
+    q5ddn2(ids) = [];
+    q1ddnT(ids) = [];
+    q2ddnT(ids) = [];
+    q3ddnT(ids) = [];
+    q4ddnT(ids) = [];
+    q5ddnT(ids) = [];
+    q1ddn2T(ids) = [];
+    q2ddn2T(ids) = [];
+    q3ddn2T(ids) = [];
+    q4ddn2T(ids) = [];
+    q5ddn2T(ids) = [];
     Y(:,ids) = [];
     Z(:,ids) = [];
 
     fY = physics_law([q1;q2;q3;q4;q5;(0.5*q1d+0.5*q1dn);(0.5*q2d+0.5*q2dn);(0.5*q3d+0.5*q3dn);(0.5*q4d+0.5*q4dn);(0.5*q5d+0.5*q5dn);...
-        (0.5*q1dd+0.5*q1ddn);(0.5*q2dd+0.5*q2ddn);(0.5*q3dd+0.5*q3ddn);(0.5*q4dd+0.5*q4ddn);(0.5*q5dd+0.5*q5ddn)],sysParams);
-    fT = physics_law(Y,sysParams);
+        (0.5*q1ddn2+0.5*q1ddn);(0.5*q2ddn2+0.5*q2ddn);(0.5*q3ddn2+0.5*q3ddn);(0.5*q4ddn2+0.5*q4ddn);(0.5*q5ddn2+0.5*q5ddn)],sysParams);
+    fT = physics_law([Y;(0.5*q1ddn2T+0.5*q1ddnT);(0.5*q2ddn2T+0.5*q2ddnT);(0.5*q3ddn2T+0.5*q3ddnT);(0.5*q4ddn2T+0.5*q4ddnT);...
+        (0.5*q5ddn2T+0.5*q5ddnT)],sysParams);
 % disp(fY)
 % disp(fT)
     [~,~,~,~,xend0,yend0,xend1,yend1,xend2,yend2] = ForwardKinematics(transpose(Z(1:5,:)),sysParams);

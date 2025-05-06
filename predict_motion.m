@@ -30,6 +30,22 @@ function [xp, tPred] = predict_motion(net, type, t, x, obj, predInterval, seqSte
                 xp(i,:) = predict(net, [x0, obj0, t(i)-t0]);
                 tEnds(i) = toc;
             end
+        case "dnnv2_10s"
+            xp = zeros(numTime, 10);
+            xp(1:initIdx, :) = x(1:initIdx, 1:10);
+            x0 = xp(initIdx, :);
+            obj0 = obj(initIdx, :);
+            t0 = t(initIdx);
+            for i = initIdx+1 : numTime
+                if (t(i)-t0) > predInterval
+                    t0 = t(i-1);
+                    obj0 = obj(i-1, :);
+                    x0 = xp(i-1, :);
+                end
+                tic
+                xp(i,:) = predict(net, [x0, obj0, t(i)-t0]);
+                tEnds(i) = toc;
+            end
         case "pinn"
             xp = zeros(numTime, 15);
             xp(1:initIdx, :) = x(1:initIdx, :);

@@ -10,13 +10,13 @@ ctrlParams.solver = "nonstifflr"; % "stifflr" (low-res) or "stiffhr" (high-res) 
 % ctrlParams.sigma = 1e-2;
 tSpan = [0,20]; %[0,20]; %0:0.01:15;
 % controller = load("best_controller3.mat");
-% ctrlParams.PID1 = controller.BestChrom(1:3);
-% ctrlParams.PID2 = controller.BestChrom(4:6);
-% ctrlParams.PID3 = controller.BestChrom(7:9);
-% ctrlParams.PID4 = controller.BestChrom(10:12);
-% ctrlParams.PID5 = controller.BestChrom(13:15);
+% ctrlParams.PID1 = [1000 100 1000]; %controller.BestChrom(1:3);
+% ctrlParams.PID2 = [1000 100 1200]; %controller.BestChrom(4:6);
+% ctrlParams.PID3 = [100 20 300]; %controller.BestChrom(7:9);
+% ctrlParams.PID4 = [100 20 300]; %controller.BestChrom(10:12);
+% ctrlParams.PID5 = [100 20 150]; %controller.BestChrom(13:15);
 % ctrlParams.Flim = 100000;
-% ctrlParams.Pf = 1; % controller.BestChrom(16);
+% ctrlParams.Pf = 0.1; % controller.BestChrom(16);
 
 %% run simulation and plot states, forces, and states against reference
 theta = 2*pi*rand;
@@ -26,9 +26,9 @@ ctrlParams.refy = ctrlParams.yrange*rad*sin(theta);
 ctrlParams.phi = 2*pi*rand;
 ctrlParams.a = 0.25+rand*0.25; % target object horizontal dimension
 ctrlParams.b = 0.25+rand*0.25; % vertical dimension
-x0 = [-1; -1; 0; 0; 0] + [2; 2; 2*pi; 2*pi; 2*pi].*rand(5,1); % th0, th1, th2
-x0 = [x0(1); 0; x0(2); 0; x0(3); 0; x0(4); 0; x0(5); 0]; % th0, th0d, th1, th1d, th2, th2d
-% x0 = zeros(10,1); % th0, th0d, th1, th1d, th2, th2d
+% x0 = [-1; -1; 0; 0; 0] + [2; 2; 2*pi; 2*pi; 2*pi].*rand(5,1); % th0, th1, th2
+% x0 = [x0(1); 0; x0(2); 0; x0(3); 0; x0(4); 0; x0(5); 0]; % th0, th0d, th1, th1d, th2, th2d
+x0 = zeros(10,1); % th0, th0d, th1, th1d, th2, th2d
 
 y = robot_simulation(tSpan, x0, sysParams, ctrlParams);
 
@@ -63,13 +63,13 @@ plot_compared_states(y(:,1),y(:,2:16),y(:,1),y(:,32:41),"position",y(:,27:31));
 
 %% run simscape model and plot states, forces, and states against reference for simscape model
 mdl = "robot_model.slx";
-theta = 2*pi*rand;
-rad = sqrt(rand);
-ctrlParams.refx = ctrlParams.xrange*rad*cos(theta);
-ctrlParams.refy = ctrlParams.yrange*rad*sin(theta);
-ctrlParams.phi = 2*pi*rand;
-ctrlParams.a = 0.25+rand*0.25; % target object horizontal dimension
-ctrlParams.b = 0.25+rand*0.25; % vertical dimension
+% theta = 2*pi*rand;
+% rad = sqrt(rand);
+% ctrlParams.refx = ctrlParams.xrange*rad*cos(theta);
+% ctrlParams.refy = ctrlParams.yrange*rad*sin(theta);
+% ctrlParams.phi = 2*pi*rand;
+% ctrlParams.a = 0.25+rand*0.25; % target object horizontal dimension
+% ctrlParams.b = 0.25+rand*0.25; % vertical dimension
 % ctrlParams.method = "interval";
 y_simscape = run_simscape(mdl,ctrlParams); %simIn,ctrlParams
 
@@ -175,6 +175,20 @@ for i = 1:length(beta)
     axis square
     hold on
 end
+
+%%
+% q1ddn = gradient(y(:,7),y(:,1));
+q1ddn = rdiff_kalman(y(:,7),y(:,1),[], 'ncp');
+q2ddn = gradient(y(:,8),y(:,1));
+q3ddn = gradient(y(:,9),y(:,1));
+q4ddn = gradient(y(:,10),y(:,1));
+% q5ddn = gradient(y(:,11),y(:,1));
+q5ddn = rdiff_kalman(y(:,11),y(:,1),[], 'ncp');
+q1ddn2 = 4*del2(y(:,2),y(:,1));
+figure;
+plot(y(:,1),y(:,16),y(:,1),q5ddn) % ,y(:,1),grad 0.5*q1ddn+0.5*q1ddn2
+% plot(y(:,1),smoothdata(y(:,12)),y(:,1),smoothdata(grad),y(:,1),smoothdata(grad2))
+legend("real","numerical")
 
 %%
 figure('Position',[500,200,800,800]);

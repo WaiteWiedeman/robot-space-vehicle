@@ -1,6 +1,6 @@
 function F = physics_law(Y,sysParams)
     sz = size(Y);
-    F = zeros(sz(2),sz(1)/3);
+    F = zeros(sz(2),5);
 
     xv = Y(1,:); % vehicle x position
     yv = Y(2,:); % vehicle y position

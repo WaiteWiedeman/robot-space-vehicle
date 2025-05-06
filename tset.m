@@ -62,14 +62,16 @@ yTrain = {};
 for i = 1:numSamples
     data = load(ds.samples{i,1}).state;
     t = data(1,:);
-    x = data(2:10, :); % q1,q2,q1_dot,q2_dot
+    x = data(2:16, :); % q1,q2,q1_dot,q2_dot
+    obj = data(22:25,:);
     for tInit = initTimes
         initIdx = find(t > tInit, 1, 'first');
         x0 = x(:, initIdx); % Initial state
+        obj0 = obj(:,initIdx);  % Initial state
         t0 = t(initIdx); % Start time
         for j = initIdx+1 : length(t)
             % tGroup = [tGroup, t(j)-t0];
-            xGroup = [xGroup, [x0; t(j)-t0]];
+            xGroup = [xGroup, [x0; obj0; t(j)-t0]];
             yGroup = [yGroup, x(:,j)];
         end
         dataSize = length(xGroup);
@@ -121,19 +123,28 @@ sz = size(X);
 % startIds = [ids+1];
 boundaryIds = [ids+1 ids sz(2)];
 
-q1d = gradient(T(1,:),X(10,:)); %zeros(1,sz(2));
+q1d = gradient(T(6,:),X(20,:)); %zeros(1,sz(2));
+q1d2 = 4*del2(T(1,:),X(20,:));
 
-q1dtrue = T(4,:);
+q1dtrue = T(11,:);
 
 q1d(boundaryIds) = [];
+q1d2(boundaryIds) = [];
 q1dtrue(boundaryIds) = [];
+
+err1 = mean(q1dtrue-q1d);
+err2 = mean(q1dtrue-q1d2);
+err3 = mean(q1d-q1d2);
+disp(err1)
+disp(err2)
+disp(err3)
 
 % for i = 1:length(startIds)
 %     td = X(10,startIds(i):endIds(i));
 %     y = T(1,startIds(i):endIds(i));
 %     q1d(startIds(i):endIds(i)) = gradient(y,td);
 % end
-gradErr = q1dtrue - q1d;
+
 % i = 2;
 % while ~isempty(X)
 %     if X(:,i) ~= X(:,i-1)

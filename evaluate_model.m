@@ -12,6 +12,8 @@ function [avgErr,errs,tPred,tSim] = evaluate_model(net, sysParams, ctrlParams, t
             errs = zeros(3*numCase, numTime);
         case {"dnn6", "lstm6", "pinn6", "pirn6"} 
             errs = zeros(6*numCase, numTime);
+        case "dnnv2_10s"
+            errs = zeros(10*numCase, numTime);
         case {"dnn", "lstm9", "pgnn", "pinn", "pirn9", "dnnv2"} 
             errs = zeros(15*numCase, numTime);
         otherwise
@@ -38,6 +40,8 @@ function [avgErr,errs,tPred,tSim] = evaluate_model(net, sysParams, ctrlParams, t
                 errs(3*(i-1)+1:3*(i-1)+3,:) = rmseErr;
             case {"dnn6", "lstm6", "pinn6", "pirn6"} 
                 errs(6*(i-1)+1:6*(i-1)+6,:) = rmseErr;
+            case "dnnv2_10s"
+                errs(10*(i-1)+1:10*(i-1)+10,:) = rmseErr;
             case {"dnn", "lstm9", "pgnn", "pinn", "pirn9", "dnnv2"} 
                 errs(15*(i-1)+1:15*(i-1)+15,:) = rmseErr;    
             otherwise
