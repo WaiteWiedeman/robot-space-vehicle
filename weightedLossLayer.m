@@ -19,20 +19,20 @@ classdef weightedLossLayer < nnet.layer.RegressionLayer ...
             %         Y     – Predictions made by network
             %         T     – Training targets
             % data loss: compute the difference between target and predicted values
-            dataLoss = mse(Y, T);
+            dataLoss = mape(Y, T,"all"); %mse(Y,T);
             % disp(dataLoss)
             % physics loss
             sysParams = params_system();
             f = physics_law(Y,sysParams);
             fTarget = physics_law(T,sysParams);
-            physicLoss = mse(f, fTarget);
+            physicLoss = mape(f, fTarget,"all");
             % disp(physicLoss)
             % End Effector loss
             [~,~,~,~,xend0,yend0,xend1,yend1,xend2,yend2] = ForwardKinematics(Y(1:5),sysParams);
             [~,~,~,~,xendTarget0,yendTarget0,xendTarget1,yendTarget1,xendTarget2,yendTarget2] = ForwardKinematics(T(1:5),sysParams);
             endEff = [xend0;yend0;xend1;yend1;xend2;yend2];
             endEffTarget = [xendTarget0;yendTarget0;xendTarget1;yendTarget1;xendTarget2;yendTarget2];
-            endEffloss = mse(endEff,endEffTarget);
+            endEffloss = mape(endEff,endEffTarget,"all");
             % disp(endEffloss)
             % final loss, combining data loss and physics loss
             trainParams = params_training();

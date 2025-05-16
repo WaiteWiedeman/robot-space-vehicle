@@ -2,16 +2,16 @@
 close all; clear; clc;
 
 %% test variables
-file = "model/dnnv2_5_128_101"; %"pinn9_5_256_5000"; "dnnv2_model"
-net = trainedNetwork; %load(file).net; % dnnv2_256_6_800
+file = modelFile; %"dnnv2"; %"pinn9_5_256_5000"; "dnnv2_model" "model/dnnv2_5_128_101"
+net = load(file).net; %dnnv2_10s_6_256_300; % dnnv2_256_6_800
 sysParams = params_system();
 ctrlParams = params_control();
 trainParams = params_training();
-trainParams.type = "dnnv2"; % "dnn3","lstm3","pinn3","dnn6","lstm6","pinn6","dnn9", "lstm9","pinn9"
+trainParams.type = "pgnn"; % "dnn3","lstm3","pinn3","dnn6","lstm6","pinn6","dnn9", "lstm9","pinn9"
 ctrlParams.method = "origin"; % random, interval, origin
 ctrlParams.solver = "nonstifflr";
 numTime = 100;
-tSpan = [0,25]; % [0,5] 0:0.01:5
+tSpan = [0,20]; % [0,5] 0:0.01:5
 predInterval = tSpan(2); 
 
 %% simulation and prediction
@@ -36,7 +36,9 @@ ref = y(:,22:23);
 %% Plots
 plot_compared_states(t,x,t,xp,"position",y(:,27:31));
 plot_compared_states(t,x,t,xp,"velocity",y(:,[19 17 18]));
-plot_compared_states(t,x,t,xp,"acceleration",y(:,[19 17 18]));
+if trainParams.type == "pgnn" || trainParams.type == "dnnv2"
+    plot_compared_states(t,x,t,xp,"acceleration",y(:,[19 17 18]));
+end
 % solve forward kinematics and plot end effector position
 [~,~,~,~,~,~,~,~,xend,yend] = ForwardKinematics(x(:,1:5),sysParams);
 [~,~,~,~,~,~,~,~,xpend,ypend] = ForwardKinematics(xp(:,1:5),sysParams);
@@ -53,11 +55,46 @@ disp(tEnd)
 %% evaluate for four states
 tSpan = [0,20];
 predInterval = 20;
-numCase = 30;
+numCase = 1;
 numTime = 500;
 [avgErr,errs,tPred,tSim] = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, trainParams.type,1,1);
 % avgErr = evaluate_model_with_4_states(net, sysParams, ctrlParams, trainParams, f1Max, tSpan, predInterval, numCase, numTime, trainParams.type);
 disp(avgErr)
+
+%% numerical gradients
+% q1ddn = gradient(y(:,7),y(:,1));
+q1ddnn = rdiff_kalman(xp(:,6),t,[], 'ncp');
+q1dd = rdiff_kalman(x(:,6),t,[], 'ncp');
+q2ddnn = rdiff_kalman(xp(:,7),t,[], 'ncp');
+q2dd = rdiff_kalman(x(:,7),t,[], 'ncp');
+q3ddnn = rdiff_kalman(xp(:,8),t,[], 'ncp');
+q3dd = rdiff_kalman(x(:,8),t,[], 'ncp');
+q4ddnn = rdiff_kalman(xp(:,9),t,[], 'ncp');
+q4dd = rdiff_kalman(x(:,9),t,[], 'ncp');
+% q5ddn = gradient(y(:,11),y(:,1));
+q5ddnn = rdiff_kalman(xp(:,10),t,[], 'ncp');
+q5dd = rdiff_kalman(x(:,10),t,[], 'ncp');
+
+figure;
+plot(y(:,1),y(:,12),y(:,1),q1ddnn,t,q1dd)
+legend("real","predictions","numerical")
+figure;
+plot(y(:,1),y(:,13),y(:,1),q2ddnn,t,q2dd)
+legend("real","predictions","numerical")
+figure;
+plot(y(:,1),y(:,14),y(:,1),q3ddnn,t,q3dd)
+legend("real","predictions","numerical")
+figure;
+plot(y(:,1),y(:,15),y(:,1),q4ddnn,t,q4dd)
+legend("real","predictions","numerical")
+figure;
+plot(y(:,1),y(:,16),y(:,1),q5ddnn,t,q5dd) % ,y(:,1),grad 0.5*q1ddn+0.5*q1ddn2
+% plot(y(:,1),smoothdata(y(:,12)),y(:,1),smoothdata(grad),y(:,1),smoothdata(grad2))
+legend("real","predictions","numerical")
+
+F_true = physics_law([x(:,1:10)';q1dd';q2dd';q3dd';q4dd';q5dd'],sysParams);
+F_pred = physics_law([xp(:,1:10)';q1ddnn';q2ddnn';q3ddnn';q4ddnn';q5ddnn'],sysParams);
+Ferr = mean((F_true-F_pred).^2);
 
 %%
 % dnnErr = errs;

@@ -27,6 +27,7 @@ function F = force_function(t, x, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om
     % disp(size(ti))
     Fg = zeros(5,1);
     Flim = ctrlParams.Flim;
+    Tlim = ctrlParams.Tlim;
     % disp("force_function")
    
     if ctrlParams.noise
@@ -71,30 +72,36 @@ function F = force_function(t, x, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om
     e3(end+1) = Alv - alv;
     e3d = Alvd - alvd;
     Fg(3) = PID3(1)*e3(end) + PID3(2)*trapz(ti,e3,2) + PID3(3)*e3d;
-    if Fg(3) > Flim
-        Fg(3) = Flim;
-    elseif Fg(3) < -Flim
-        Fg(3) = -Flim;
+    if Fg(3) > Tlim
+        Fg(3) = Tlim;
+    elseif Fg(3) < -Tlim
+        Fg(3) = -Tlim;
     end
 
     e4(end+1) = Th1 - th1;
     e4d = Om1 - th1d;
     Fg(4) = PID4(1)*e4(end) + PID4(2)*trapz(ti,e4,2) + PID4(3)*e4d;
-    if Fg(4) > Flim
-        Fg(4) = Flim;
-    elseif Fg(4) < -Flim
-        Fg(4) = -Flim;
+    if Fg(4) > Tlim
+        Fg(4) = Tlim;
+    elseif Fg(4) < -Tlim
+        Fg(4) = -Tlim;
     end
 
     e5(end+1) = Th2 - th2;
     e5d = Om2 - th2d;
     Fg(5) = PID5(1)*e5(end) + PID5(2)*trapz(ti,e5,2) + PID5(3)*e5d;
-    if Fg(5) > Flim
-        Fg(5) = Flim;
-    elseif Fg(5) < -Flim
-        Fg(5) = -Flim;
+    if Fg(5) > Tlim
+        Fg(5) = Tlim;
+    elseif Fg(5) < -Tlim
+        Fg(5) = -Tlim;
     end
     % disp(F)
+    % u_max = ctrlParams.Pf; % *ones(5,1);
+    % F(1) = Fp(1) + clip(Fg(1)-Fp(1),-u_max,u_max); 
+    % F(2) = Fp(2) + clip(Fg(2)-Fp(2),-u_max,u_max);
+    % F(3) = Fp(3) + clip(Fg(3)-Fp(3),-u_max,u_max);
+    % F(4) = Fp(4) + clip(Fg(4)-Fp(4),-u_max,u_max);
+    % F(5) = Fp(5) + clip(Fg(5)-Fp(5),-u_max,u_max);
     F = Fp + ctrlParams.Pf*(Fg-Fp);
     Fp = F;
 end

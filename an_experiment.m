@@ -7,12 +7,14 @@ clc;
 sysParams = params_system();
 ctrlParams = params_control();
 trainParams = params_training();
-trainParams.numSamples = 100;
-trainParams.type = "pinn"; % "dnn6","pinn6","dnn9","pinn9"
+trainParams.numSamples = 400;
+trainParams.type = "pgnn"; % "dnn6","pinn6","dnn9","pinn9"
 trainParams.numLayers = 5;
 trainParams.numNeurons = 256;
 trainParams.datasource = "odes";
 % trainParams.numEpochs = 1;
+trainParams.numEpochs = 400;
+trainParams.lrDropEpoch = 100;
 modelFile = "model\"+trainParams.type+"_"+num2str(trainParams.numLayers)+"_"+num2str(trainParams.numNeurons)+"_"+num2str(trainParams.numSamples)+".mat";
 
 %% generate samples
@@ -77,6 +79,7 @@ switch trainParams.type
         net = output.trainedNet;
     case "pgnn"
         [xTrain,yTrain,layers,options] = train_pgnn_model(dataFile, trainParams);
+        figure;
         plot(layers)
         [net,info] = trainNetwork(xTrain,yTrain,layers,options);
     otherwise

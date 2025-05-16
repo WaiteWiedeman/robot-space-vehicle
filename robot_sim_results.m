@@ -10,13 +10,14 @@ ctrlParams.solver = "nonstifflr"; % "stifflr" (low-res) or "stiffhr" (high-res) 
 % ctrlParams.sigma = 1e-2;
 tSpan = [0,20]; %[0,20]; %0:0.01:15;
 % controller = load("best_controller3.mat");
-% ctrlParams.PID1 = [1000 100 1000]; %controller.BestChrom(1:3);
-% ctrlParams.PID2 = [1000 100 1200]; %controller.BestChrom(4:6);
-% ctrlParams.PID3 = [100 20 300]; %controller.BestChrom(7:9);
-% ctrlParams.PID4 = [100 20 300]; %controller.BestChrom(10:12);
-% ctrlParams.PID5 = [100 20 150]; %controller.BestChrom(13:15);
-% ctrlParams.Flim = 100000;
-% ctrlParams.Pf = 0.1; % controller.BestChrom(16);
+% ctrlParams.PID1 = controller.BestChrom(1:3); %[50 10 100]; %
+% ctrlParams.PID2 = controller.BestChrom(4:6); %[50 10 100];
+% ctrlParams.PID3 = controller.BestChrom(7:9); %[200 20 100];
+% ctrlParams.PID4 = controller.BestChrom(10:12); %[100 20 50];
+% ctrlParams.PID5 = controller.BestChrom(13:15); %[100 20 50];
+% ctrlParams.Flim = 1000;
+% ctrlParams.Tlim = 50;
+% ctrlParams.Pf = 0.2; % controller.BestChrom(16);
 
 %% run simulation and plot states, forces, and states against reference
 theta = 2*pi*rand;
@@ -84,27 +85,25 @@ plot_forces(y_simscape(:,1),y_simscape(:,17:21));
 plot_endeffector([xend yend],y_simscape(:,22:23)) %y(:,15:16)
 
 %% Tune PID w/ GA
-N_monte_carlo = 20;
-tSpan = [0,20];
+N_monte_carlo = 30;
+tSpan = [0,30];
 Ts_lim = 20;
-numsteps = 400;
-ctrlParams.solver = "nonstifflr";
-ctrlParams.noise = 1;
-ctrlParams.Flim = 100000;
-myObj = @(gene) fitnessfun(gene, N_monte_carlo,tSpan,Ts_lim,numsteps,ctrlParams,sysParams);
+ctrlParams.Flim = 1000;
+ctrlParams.Tlim = 50;
+ctrlParams.solver = "GA";
+myObj = @(gene) fitnessfun(gene, N_monte_carlo,tSpan,Ts_lim,ctrlParams,sysParams);
 % GA parameters
 Pc = 0.95;
 fitfun = @(x) myObj(x);
 PopSize = 100;
-MaxGens = 200;
-nvars   = 16;
+MaxGens = 300;
+nvars   = 15;
 A       = [];
 b       = [];
 Aeq     = [];               
 beq     = [];
-lb      = 0*ones(1,16);
-ub      = 1000*ones(1,15);
-ub      = [ub, 1];
+lb      = 0*ones(1,15);
+ub      = [1000 1000 2000 1000 1000 2000 500 500 500 200 200 200 200 200 200];
 nonlcon = [];
 options = optimoptions('ga', 'PopulationSize', PopSize, 'MaxGenerations',...
     MaxGens,'PlotFcn',{@gaplotbestf,@gaplotscores},'UseParallel',true);
@@ -179,12 +178,24 @@ end
 %%
 % q1ddn = gradient(y(:,7),y(:,1));
 q1ddn = rdiff_kalman(y(:,7),y(:,1),[], 'ncp');
-q2ddn = gradient(y(:,8),y(:,1));
-q3ddn = gradient(y(:,9),y(:,1));
-q4ddn = gradient(y(:,10),y(:,1));
+q2ddn = rdiff_kalman(y(:,8),y(:,1),[], 'ncp');
+q3ddn = rdiff_kalman(y(:,9),y(:,1),[], 'ncp');
+q4ddn = rdiff_kalman(y(:,10),y(:,1),[], 'ncp');
 % q5ddn = gradient(y(:,11),y(:,1));
 q5ddn = rdiff_kalman(y(:,11),y(:,1),[], 'ncp');
 q1ddn2 = 4*del2(y(:,2),y(:,1));
+figure;
+plot(y(:,1),y(:,12),y(:,1),q1ddn)
+legend("real","numerical")
+figure;
+plot(y(:,1),y(:,13),y(:,1),q2ddn)
+legend("real","numerical")
+figure;
+plot(y(:,1),y(:,14),y(:,1),q3ddn)
+legend("real","numerical")
+figure;
+plot(y(:,1),y(:,15),y(:,1),q4ddn)
+legend("real","numerical")
 figure;
 plot(y(:,1),y(:,16),y(:,1),q5ddn) % ,y(:,1),grad 0.5*q1ddn+0.5*q1ddn2
 % plot(y(:,1),smoothdata(y(:,12)),y(:,1),smoothdata(grad),y(:,1),smoothdata(grad2))
@@ -289,20 +300,19 @@ function plot_endeffector(x,refs)
 
 end
 
-function [fit]  = fitnessfun(gene, N_monte_carlo,tSpan,Ts_lim,numsteps,ctrlParams,sysParams) %,Rise_thresh ,POlim,Ts_lim
+function [fit]  = fitnessfun(gene, N_monte_carlo,tSpan,Ts_lim,ctrlParams,sysParams) %,Rise_thresh ,POlim,Ts_lim
 
 ctrlParams.PID1 = gene(1:3);
 ctrlParams.PID2 = gene(4:6);
 ctrlParams.PID3 = gene(7:9);
 ctrlParams.PID4 = gene(10:12);
 ctrlParams.PID5 = gene(13:15);
-ctrlParams.Pf = gene(16);
 
 % ts1_above_thresh = zeros(1,N_monte_carlo);
 % ts2_above_thresh = zeros(1,N_monte_carlo);
-ts3_above_thresh = zeros(1,N_monte_carlo);
-ts4_above_thresh = zeros(1,N_monte_carlo);
-ts5_above_thresh = zeros(1,N_monte_carlo);
+% ts3_above_thresh = zeros(1,N_monte_carlo);
+% ts4_above_thresh = zeros(1,N_monte_carlo);
+% ts5_above_thresh = zeros(1,N_monte_carlo);
 % x1_above_thresh = zeros(1,N_monte_carlo);
 % x2_above_thresh = zeros(1,N_monte_carlo);
 % x3_above_thresh = zeros(1,N_monte_carlo);
@@ -339,30 +349,28 @@ for sim_n = 1:N_monte_carlo
         disp("loop bailed: too much time")
         break
     end
-    if length(y(:,1)) < numsteps + 5
-        disp("loop bailed: not enough steps")
-        break
-    end
 
-    e1(sim_n) = mean(y(end-numsteps:end,2) - y(end-numsteps:end,27),'all')^2;
-    e2(sim_n) = mean(y(end-numsteps:end,3) - y(end-numsteps:end,28),'all')^2;
-    e3(sim_n) = mean(y(end-numsteps:end,4) - y(end-numsteps:end,29),'all')^2;
-    e4(sim_n) = mean(y(end-numsteps:end,5) - y(end-numsteps:end,30),'all')^2;
-    e5(sim_n) = mean(y(end-numsteps:end,6) - y(end-numsteps:end,31),'all')^2;
-    exend(sim_n) = mean(y(end-numsteps:end,22) - xend(end-numsteps:end),'all')^2;
-    eyend(sim_n) = mean(y(end-numsteps:end,23) - yend(end-numsteps:end),'all')^2;
+    Idx = find(y(:,1) > Ts_lim, 1, 'first'); % start where force stop acting
+    
+    e1(sim_n) = mean((y(Idx:end,2) - y(Idx:end,27)).^2,'all');
+    e2(sim_n) = mean((y(Idx:end,3) - y(Idx:end,28)).^2,'all');
+    e3(sim_n) = mean((y(Idx:end,4) - y(Idx:end,29)).^2,'all');
+    e4(sim_n) = mean((y(Idx:end,5) - y(Idx:end,30)).^2,'all');
+    e5(sim_n) = mean((y(Idx:end,6) - y(Idx:end,31)).^2,'all');
+    exend(sim_n) = mean((y(Idx:end,22) - xend(Idx:end)).^2,'all');
+    eyend(sim_n) = mean((y(Idx:end,23) - yend(Idx:end)).^2,'all');
 
     % info1 = lsiminfo(y(:,2),y(:,1));
     % info2 = lsiminfo(y(:,3),y(:,1));
-    info3 = lsiminfo(y(:,4),y(:,1));
-    info4 = lsiminfo(y(:,5),y(:,1));
-    info5 = lsiminfo(y(:,6),y(:,1));
+    % info3 = lsiminfo(y(:,4),y(:,1));
+    % info4 = lsiminfo(y(:,5),y(:,1));
+    % info5 = lsiminfo(y(:,6),y(:,1));
     % 
     % Ts1 = info1.SettlingTime;
     % Ts2 = info2.SettlingTime;
-    Ts3 = info3.SettlingTime;
-    Ts4 = info4.SettlingTime;
-    Ts5 = info5.SettlingTime;
+    % Ts3 = info3.SettlingTime;
+    % Ts4 = info4.SettlingTime;
+    % Ts5 = info5.SettlingTime;
     % 
     % if x0(1) >= y(1,27)
     %     max1 = info1.Min;
@@ -394,13 +402,13 @@ for sim_n = 1:N_monte_carlo
     %     ts1_above_thresh(sim_n) = 1;
     % elseif Ts2 > Ts_lim
     %     ts2_above_thresh(sim_n) = 1;
-    if Ts3 > Ts_lim
-        ts3_above_thresh(sim_n) = 1;
-    elseif Ts4 > Ts_lim
-        ts4_above_thresh(sim_n) = 1;
-    elseif Ts5 > Ts_lim
-        ts5_above_thresh(sim_n) = 1;
-    end
+    % if Ts3 > Ts_lim
+    %     ts3_above_thresh(sim_n) = 1;
+    % elseif Ts4 > Ts_lim
+    %     ts4_above_thresh(sim_n) = 1;
+    % elseif Ts5 > Ts_lim
+    %     ts5_above_thresh(sim_n) = 1;
+    % end
     % 
     % if abs(max1 - y(end,19))/abs(x0(1) - y(end,19)) > POlim 
     %     x1_above_thresh(sim_n) = 1;
@@ -415,7 +423,13 @@ for sim_n = 1:N_monte_carlo
     % end
 end
 disp('monte carlo done')
-% disp(mean(e1))
+disp(mean(e1))
+disp(mean(e2))
+disp(mean(e3))
+disp(mean(e4))
+disp(mean(e5))
+disp(mean(exend))
+disp(mean(eyend))
 
 % fitness is weighted squared probability
 % fit = (1e2)*((sum(x_above_thresh)/N_monte_carlo)^2 + (sum(settling_time_above_thresh)/N_monte_carlo)^2 ...
@@ -423,7 +437,7 @@ disp('monte carlo done')
 if sim_n < N_monte_carlo
     fit = 1e6;
 else
-    fit = 1e4*(10*(mean(e1)+mean(e2)+mean(e3)+mean(e4)+mean(e5)+mean(exend)+mean(eyend))); %+ ...
+    fit = 1e3*(1*(mean(e1)+mean(e2)+mean(e3)+mean(e4)+mean(e5)+mean(exend)+mean(eyend))); %+ ...
         %(sum(ts3_above_thresh)/N_monte_carlo)^2 + (sum(ts4_above_thresh)/N_monte_carlo)^2 + (sum(ts5_above_thresh)/N_monte_carlo)^2);
 end
 end
