@@ -12,12 +12,13 @@ switch flag
             plot(t,x(:,i),'b-',tp,xp(:,i),'r--',t,refs(:,i),'k:','LineWidth',2);
             hold on
             % xline(1,'k--', 'LineWidth',1);
-            if i == 1
+            if i == 1 || i ==2
                 ylabel(labels(i) + "[m]","Interpreter","latex");
             else
                 ylabel(labels(i) + "[rad]","Interpreter","latex");
             end
             % set(get(gca,'ylabel'),'rotation',0);
+            grid on
             set(gca, 'FontSize', 15);
             set(gca, 'FontName', "Arial")
             if i == numState-10
@@ -35,12 +36,13 @@ switch flag
             plot(t,x(:,i),'b-',tp,xp(:,i),'r--','LineWidth',2);
             hold on
             % xline(1,'k--', 'LineWidth',1);
-            if i == 4
+            if i == 6 || i == 7
                 ylabel(labels(i) + "[m/s]","Interpreter","latex");
             else
                 ylabel(labels(i) + "[rad/s]","Interpreter","latex");
             end
             % set(get(gca,'ylabel'),'rotation',0);
+            grid on
             set(gca, 'FontSize', 15);
             set(gca, 'FontName', "Arial")
             if i == numState-3
@@ -58,12 +60,13 @@ switch flag
             plot(t,x(:,i),'b-',tp,xp(:,i),'r--','LineWidth',2);
             hold on
             % xline(1,'k--', 'LineWidth',1);
-            if i == 7
+            if i == 11 || i == 12
                 ylabel(labels(i) + "[m/s/s]","Interpreter","latex");
             else
                 ylabel(labels(i) + "[rad/s/s]","Interpreter","latex");
             end
             set(get(gca,'ylabel'),'rotation',0);
+            grid on
             set(gca, 'FontSize', 15);
             set(gca, 'FontName', "Arial")
             if i == numState

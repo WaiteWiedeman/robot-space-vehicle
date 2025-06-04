@@ -7,7 +7,7 @@ net = load(file).net; %dnnv2_10s_6_256_300; % dnnv2_256_6_800
 sysParams = params_system();
 ctrlParams = params_control();
 trainParams = params_training();
-trainParams.type = "pgnn"; % "dnn3","lstm3","pinn3","dnn6","lstm6","pinn6","dnn9", "lstm9","pinn9"
+trainParams.type = "dnnv2_10s"; % "dnn3","lstm3","pinn3","dnn6","lstm6","pinn6","dnn9", "lstm9","pinn9"
 ctrlParams.method = "origin"; % random, interval, origin
 ctrlParams.solver = "nonstifflr";
 numTime = 100;
@@ -42,7 +42,7 @@ end
 % solve forward kinematics and plot end effector position
 [~,~,~,~,~,~,~,~,xend,yend] = ForwardKinematics(x(:,1:5),sysParams);
 [~,~,~,~,~,~,~,~,xpend,ypend] = ForwardKinematics(xp(:,1:5),sysParams);
-plot_endeffector([xend yend],[xpend ypend],y(:,22:23)) %y(:,15:16)
+plot_endeffector(t,[xend yend],[xpend ypend],y(:,22:23)) %y(:,15:16)
 % make image and video
 % tPred = [1,25];
 % MakeImage(ctrlParams, sysParams, t, x, xp, ref, tPred)
@@ -136,20 +136,24 @@ legend("Location","northeast");
 set(gca,"FontName","Arial", "FontSize", 15);
 
 %% functions
-function plot_endeffector(x,xp,refs)
+function plot_endeffector(t,x,xp,refs)
     refClr = "blue";
     figure('Position',[500,100,800,800]);
     tiledlayout("vertical","TileSpacing","tight")
     plot(x(:,1),x(:,2),'Color',refClr,'LineWidth',2);
     hold on 
     plot(xp(:,1),xp(:,2),'r--','LineWidth',2)
+    Idx = find(t >= 1, 1, 'first');
     if refs ~= 0
         hold on
-        plot(refs(:,1),refs(:,2),'*','LineWidth',2);
+        plot(refs(:,1),refs(:,2),'m:','LineWidth',2);
     end
+    hold on
+    plot(xp(Idx,1),xp(Idx,2),'Marker',"o",'MarkerFaceColor','g','MarkerSize',10)
     axis padded
-    legend("Ground Truth","Prediction","Reference","Location","best","FontName","Arial");
-    title('End Effector Position')
+    grid on
+    legend("Ground Truth","Prediction","Reference Trajectory","Predictions Start (1 sec)","Location","best","FontName","Arial",'FontSize',10);
+    title('End Effector Path')
     % xline(1,'k--','LineWidth',2);
     ylabel("Y [m]");
     xlabel("X [m]");
