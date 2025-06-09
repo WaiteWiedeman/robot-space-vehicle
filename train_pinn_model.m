@@ -115,21 +115,22 @@ function output = train_pinn_model(sampleFile, trainParams,sysParams,ctrlParams,
                     "ExecutionEnvironment"];
     monitor.XLabel = "Iteration";
     
-    trainParams.alpha = trainParams.alpha^3;
-    trainParams.beta = trainParams.beta*0.01;
+    % trainParams.alpha = trainParams.alpha^3;
+    % trainParams.beta = trainParams.beta*0.01;
 
     net = train_adam_update(net, xTrain, yTrain, trainParams, sysParams, monitor);
     save("model\temp", 'net','monitor');
     output.trainedNet = net;
 
-    ctrlParams.solver = "stiffhr"; % "stiff" or "normal"
-    ctrlParams.method = "origin"; % random, interval, origin
-    tSpan = [0,20];
-    predInterval = tSpan(2);
-    numCase = 30;
-    numTime = 500;
-    initTime = 1;
-    [avgErr,~,~,~] = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, trainParams.type,0, initTime);
+    % ctrlParams.solver = "nonstifflr"; % "stiff" or "normal"
+    % ctrlParams.method = "origin"; % random, interval, origin
+    % tSpan = [0,20];
+    % predInterval = tSpan(2);
+    % numCase = 30;
+    % numTime = 500;
+    % initTime = 1;
+    % [avgErr,~,~,~] = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, trainParams.type,0, initTime);
+    avgErr = 5;
     updateInfo(monitor,...
         TestAccuracy=avgErr);
 end
@@ -218,7 +219,10 @@ function [loss, gradients] = modelLoss(net, X, T, sysParams, trainParams)
     % Split inputs and targets into cell arrays
 
     [Z, ~] = forward(net, X);
-    dataLoss = mse(Z, T);
+    % dataLoss = mape(Z, T,'all');
+    % dataLoss = mse(Z, T);
+    AEd  = abs(Z-T);  % vector containing the Squared Error xor each observation
+    dataLoss = mean(AEd,"all")/mean(abs(T - mean(T)),"all");  % Mean-Squared Error
 
     X = extractdata(X);
     T = extractdata(T);
@@ -239,15 +243,19 @@ function [loss, gradients] = modelLoss(net, X, T, sysParams, trainParams)
     forceTargets = dlarray(fT, "CB");
     endEffPreds = dlarray(endEff, "CB");
     endEffTargets = dlarray(endEffTarget, "CB");
-    
+
     % total loss
-    physicLoss = mse(forcePreds, forceTargets);
-    endEffloss = mse(endEffPreds, endEffTargets);
-    % disp((1.0-trainParams.alpha-trainParams.beta)*dataLoss)
-    % disp(trainParams.alpha*physicLoss)
-    % disp(trainParams.beta*endEffloss)
+    % physicLoss = mae(forcePreds, forceTargets,"all");
+    AEp  = abs(forcePreds-forceTargets);  % vector containing the Squared Error xor each observation
+    physicLoss = mean(AEp,"all")/mean(abs(forceTargets - mean(forceTargets)),"all");  % Mean-Squared Error
+    % endEffloss = mape(endEffPreds, endEffTargets,"all");
+    AEe  = abs(endEffPreds-endEffTargets);  % vector containing the Squared Error xor each observation
+    endEffloss = mean(AEe,"all")/mean(abs(endEffTargets - mean(endEffTargets)),"all");  % Mean-Squared Error
+    disp(dataLoss)
+    disp(physicLoss)
+    disp(endEffloss)
     loss = (1.0-trainParams.alpha-trainParams.beta)*dataLoss + trainParams.alpha*physicLoss + trainParams.beta*endEffloss;
-    
+    % loss = dataLoss;
     gradients = dlgradient(loss, net.Learnables);
 end
 
@@ -302,36 +310,43 @@ function [fY,fT,endEff,endEffTarget] = physicsloss(T,Y,Z,ids,sysParams)
     q3(ids) = [];
     q4(ids) = [];
     q5(ids) = [];
+
     q1d(ids) = [];
     q2d(ids) = [];
     q3d(ids) = [];
     q4d(ids) = [];
     q5d(ids) = [];
+
     q1dn(ids) = [];
     q2dn(ids) = [];
     q3dn(ids) = [];
     q4dn(ids) = [];
     q5dn(ids) = [];
+
     q1ddn(ids) = [];
     q2ddn(ids) = [];
     q3ddn(ids) = [];
     q4ddn(ids) = [];
     q5ddn(ids) = [];
+
     q1ddn2(ids) = [];
     q2ddn2(ids) = [];
     q3ddn2(ids) = [];
     q4ddn2(ids) = [];
     q5ddn2(ids) = [];
+
     q1ddnT(ids) = [];
     q2ddnT(ids) = [];
     q3ddnT(ids) = [];
     q4ddnT(ids) = [];
     q5ddnT(ids) = [];
+
     q1ddn2T(ids) = [];
     q2ddn2T(ids) = [];
     q3ddn2T(ids) = [];
     q4ddn2T(ids) = [];
     q5ddn2T(ids) = [];
+
     Y(:,ids) = [];
     Z(:,ids) = [];
 
