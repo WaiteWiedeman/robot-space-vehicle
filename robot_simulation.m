@@ -19,7 +19,7 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
                 figure;
                 opts = odeset(opts,'OutputFcn',@odeplot);
             end
-            [t,x] = ode113(@(t,x) robot_system(t, x, noise, sysParams, ctrlParams), tSpan, x0,opts);
+            [t,x] = ode23(@(t,x) robot_system(t, x, noise, sysParams, ctrlParams), tSpan, x0,opts);
         case "nonstiffhr"
             % startTime = datetime;
             % stopTime = 60*5; % end sim in 60 seconds
@@ -56,6 +56,7 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
     end
     % [t,x] = select_samples(ctrlParams, t, x);
     numTime = length(t);
+    y = zeros(numTime,41);
     for i = 1 : numTime
         [Xd, Yd, Xdd, Ydd, Xv, Xvd, Yv, Yvd] = referenceTrajectory(t(i), ctrlParams,sysParams);
         [Alv,Th1,Th2,Alvd,Om1,Om2] = InverseKinematics(Xd,Yd,Xdd,Ydd,Xv,Xvd,Yv,Yvd);
@@ -92,6 +93,16 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
         y(i,29) = Alv; % desired vehicle pitch angle
         y(i,30) = Th1; % Th1 desired
         y(i,31) = Th2; % Th2 desired 
+        if i <= 10000
+            y(i,32:41) = noise(:,i).*x(i,:)'; % noise
+        elseif i > 10000
+            if mod(i,10000) == 0
+                div = 1;
+            else
+                div = floor(i/10000);
+            end
+            y(i,32:41) = noise(:,i-div*10000).*x(i,:)'; % noise
+        end
     end
     y = select_samples(ctrlParams, t, y);
 end

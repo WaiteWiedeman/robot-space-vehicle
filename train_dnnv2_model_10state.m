@@ -62,7 +62,7 @@ function [xTrain,yTrain,layers,options] = train_dnnv2_model_10state(sampleFile, 
     layers = [
         layers
         fullyConnectedLayer(numStates, "Name", "output")
-        regressionLayer]; % weightedLossLayer("mse")
+        DNNLossLayer("mse")]; % weightedLossLayer("mse") regressionLayer
 
     layers = layerGraph(layers);
     % plot(lgraph);

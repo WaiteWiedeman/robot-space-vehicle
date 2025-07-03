@@ -2,18 +2,18 @@ function [xp, tPred] = predict_motion(net, type, t, x, obj, predInterval, seqSte
     numTime = length(t);
     initIdx = find(t > initTime, 1, 'first'); % start where force stop acting
     switch type
-        case "dnn"
-            xp = zeros(numTime, 15);
-            xp(1:initIdx, :) = x(1:initIdx, :);
-            x0 = xp(initIdx, :);
-            t0 = t(initIdx);
-            for i = initIdx+1 : numTime
-                if (t(i)-t0) > predInterval
-                    t0 = t(i-1);
-                    x0 = xp(i-1, :);
-                end
-                xp(i,:) = predict(net, [x0, t(i)-t0]);
-            end
+        % case "dnn"
+        %     xp = zeros(numTime, 15);
+        %     xp(1:initIdx, :) = x(1:initIdx, :);
+        %     x0 = xp(initIdx, :);
+        %     t0 = t(initIdx);
+        %     for i = initIdx+1 : numTime
+        %         if (t(i)-t0) > predInterval
+        %             t0 = t(i-1);
+        %             x0 = xp(i-1, :);
+        %         end
+        %         xp(i,:) = predict(net, [x0, t(i)-t0]);
+        %     end
         case {"dnnv2","pgnn"}
             xp = zeros(numTime, 15);
             xp(1:initIdx, :) = x(1:initIdx, :);
@@ -30,7 +30,7 @@ function [xp, tPred] = predict_motion(net, type, t, x, obj, predInterval, seqSte
                 xp(i,:) = predict(net, [x0, obj0, t(i)-t0]);
                 tEnds(i) = toc;
             end
-        case "dnnv2_10s"
+        case {"dnn","dnnv2_10s"}
             xp = zeros(numTime, 10);
             xp(1:initIdx, :) = x(1:initIdx, 1:10);
             x0 = xp(initIdx, :);

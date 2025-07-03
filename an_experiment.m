@@ -7,14 +7,14 @@ clc;
 sysParams = params_system();
 ctrlParams = params_control();
 trainParams = params_training();
-trainParams.numSamples = 400;
-trainParams.type = "pgnn"; % "dnn6","pinn6","dnn9","pinn9"
-trainParams.numLayers = 5;
+trainParams.numSamples = 1200;
+trainParams.type = "dnn"; % "dnn6","pinn6","dnn9","pinn9"
+trainParams.numLayers = 6;
 trainParams.numNeurons = 256;
 trainParams.datasource = "odes";
 % trainParams.numEpochs = 1;
-trainParams.numEpochs = 400;
-trainParams.lrDropEpoch = 100;
+% trainParams.numEpochs = 400;
+% trainParams.lrDropEpoch = 100;
 modelFile = "model\"+trainParams.type+"_"+num2str(trainParams.numLayers)+"_"+num2str(trainParams.numNeurons)+"_"+num2str(trainParams.numSamples)+".mat";
 
 %% generate samples
@@ -56,9 +56,7 @@ switch trainParams.type
         output = train_pinn_model_4(dataFile, trainParams,sysParams,ctrlParams,monitor);
         net = output.trainedNet;
     case "dnn"
-        [xTrain,yTrain,layers,options] = train_dnn_model(dataFile, trainParams);
-        plot(layers)
-        [net,info] = trainNetwork(xTrain,yTrain,layers,options);
+        [net, info] = train_dnn_model(dataFile, trainParams);
     case "dnnv2"
         [xTrain,yTrain,layers,options] = train_dnnv2_model(dataFile, trainParams);
         figure;
@@ -78,10 +76,11 @@ switch trainParams.type
         output = train_pinn_model(dataFile, trainParams,sysParams,ctrlParams,monitor);
         net = output.trainedNet;
     case "pgnn"
-        [xTrain,yTrain,layers,options] = train_pgnn_model(dataFile, trainParams);
-        figure;
-        plot(layers)
-        [net,info] = trainNetwork(xTrain,yTrain,layers,options);
+        % [xTrain,yTrain,layers,options] = train_pgnn_model(dataFile, trainParams);
+        % figure;
+        % plot(layers)
+        % [net,info] = trainNetwork(xTrain,yTrain,layers,options);
+        [net, info] = train_pgnn_model(dataFile, trainParams, sysParams);
     otherwise
         disp("unspecified type of model.")
 end

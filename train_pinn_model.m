@@ -122,15 +122,15 @@ function output = train_pinn_model(sampleFile, trainParams,sysParams,ctrlParams,
     save("model\temp", 'net','monitor');
     output.trainedNet = net;
 
-    % ctrlParams.solver = "nonstifflr"; % "stiff" or "normal"
-    % ctrlParams.method = "origin"; % random, interval, origin
-    % tSpan = [0,20];
-    % predInterval = tSpan(2);
-    % numCase = 30;
-    % numTime = 500;
-    % initTime = 1;
-    % [avgErr,~,~,~] = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, trainParams.type,0, initTime);
-    avgErr = 5;
+    ctrlParams.solver = "nonstifflr"; % "stiff" or "normal"
+    ctrlParams.method = "origin"; % random, interval, origin
+    tSpan = [0,20];
+    predInterval = tSpan(2);
+    numCase = 20;
+    numTime = 500;
+    initTime = 1;
+    [avgErr,~,~,~] = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, trainParams.type,0, initTime);
+    % avgErr = 5;
     updateInfo(monitor,...
         TestAccuracy=avgErr);
 end

@@ -19,7 +19,7 @@ tSpan = [0,20]; %[0,20]; %0:0.01:15;
 % ctrlParams.Tlim = 50;
 % ctrlParams.Pf = 0.2; % controller.BestChrom(16);
 
-%% run simulation and plot states, forces, and states against reference
+%% generate random target
 theta = 2*pi*rand;
 rad = sqrt(rand);
 ctrlParams.refx = ctrlParams.xrange*rad*cos(theta);
@@ -27,12 +27,14 @@ ctrlParams.refy = ctrlParams.yrange*rad*sin(theta);
 ctrlParams.phi = 2*pi*rand;
 ctrlParams.a = 0.25+rand*0.25; % target object horizontal dimension
 ctrlParams.b = 0.25+rand*0.25; % vertical dimension
-% x0 = [-1; -1; 0; 0; 0] + [2; 2; 2*pi; 2*pi; 2*pi].*rand(5,1); % th0, th1, th2
-% x0 = [x0(1); 0; x0(2); 0; x0(3); 0; x0(4); 0; x0(5); 0]; % th0, th0d, th1, th1d, th2, th2d
-x0 = zeros(10,1); % th0, th0d, th1, th1d, th2, th2d
+x0 = [-1; -1; 0; 0; 0] + [2; 2; 2*pi; 2*pi; 2*pi].*rand(5,1); % th0, th1, th2
+x0 = [x0(1); 0; x0(2); 0; x0(3); 0; x0(4); 0; x0(5); 0]; % th0, th0d, th1, th1d, th2, th2d
+% x0 = zeros(10,1); % th0, th0d, th1, th1d, th2, th2d
 
+%% run simulation 
 y = robot_simulation(tSpan, x0, sysParams, ctrlParams);
 
+%% plot states, forces, and states against reference
 % plot states, forces, and states against reference
 plot_states(y(:,1),y(:,2:16),"position",y(:,27:31));
 plot_states(y(:,1),y(:,2:16),"velocity",y(:,27:31));
@@ -47,7 +49,8 @@ info1 = lsiminfo(y(:,2),y(:,1));
 info2 = lsiminfo(y(:,3),y(:,1));
 info3 = lsiminfo(y(:,4),y(:,1));
 
-% MakeVideo(ctrlParams,sysParams, y(:,1), y(:,2:6), y(:,22:23), [0,tSpan(end)]);
+% MakeVideo(ctrlParams,sysParams, y(:,1), y(:,2:6), y(:,22:23), [0,1]);
+MakeImage(ctrlParams,sysParams, y(:,1), y(:,2:6), 0, y(:,22:23), tSpan)
 
 % disp(xend(end))
 % disp(yend(end))
@@ -55,12 +58,15 @@ info3 = lsiminfo(y(:,4),y(:,1));
 % disp(y(end,3)-y(end,17))
 % disp(y(end,4)-y(end,18))
 
-%%
-plot_compared_states(y(:,1),y(:,2:16),y(:,1),y(:,32:41),"position",y(:,27:31));
-
-% plot_compared_states(y(:,1),y(:,2:16),y(:,1),y(:,2:16) + 0.01*randn(size(y(:,2:16))),"position",y(:,27:31));
-% plot_compared_states(y(:,1),y(:,2:16),y(:,1),y(:,2:16) + 0.01*randn(size(y(:,2:16))),"velocity",y(:,27:31));
-% plot_compared_states(y(:,1),y(:,2:16),y(:,1),y(:,2:16) + 0.01*randn(size(y(:,2:16))),"acceleration",y(:,27:31));
+%% noise plot
+figure('Position',[500,100,800,800]);
+plot(y(:,1),y(:,32:41),'LineWidth',2);
+xlabel('Time (s)')
+ylabel('Noise');
+legend("$x_v$","$y_v$","$\alpha_v$","$\theta_1$","$\theta_2$","$\dot{x}_v$","$\dot{y}_v$"...
+    ,"$\dot{\alpha}_v$","$\dot{\theta}_1$","$\dot{\theta}_2$","Interpreter","latex");
+set(gca, 'FontSize', 15);
+set(gca, 'FontName', 'Arial');
 
 %% run simscape model and plot states, forces, and states against reference for simscape model
 mdl = "robot_model.slx";
@@ -214,6 +220,12 @@ xlabel("Time (s)");
 function plot_forces(t,u)
     figure('Position',[500,100,800,800]);
     plot(t,u(:,1),'k-',t,u(:,2),'b-',t,u(:,3),'g-',t,u(:,4),'m-',t,u(:,5),'c-','LineWidth',2);
+    xlabel("Time (s)");
+    ylabel("Force (N)");
+    % set(get(gca,'ylabel'),'rotation',0);
+    grid on
+    set(gca, 'FontSize', 15);
+    set(gca, 'FontName', "Arial")
     legend("$u_x$","$u_y$","$\tau_0$","$\tau_1$","$\tau_2$","Interpreter","latex");
 end
 
@@ -231,8 +243,14 @@ switch flag
             plot(t,x(:,i),'b-',t,refs(:,i),'k:','LineWidth',2);
             hold on
             % xline(1,'k--', 'LineWidth',1);
-            ylabel(labels(i),"Interpreter","latex");
+            if i == 1 || i ==2
+                ylabel(labels(i) + "[m]","Interpreter","latex");
+            else
+                ylabel(labels(i) + "[rad]","Interpreter","latex");
+            end
+            % ylabel(labels(i),"Interpreter","latex");
             set(get(gca,'ylabel'),'rotation',0);
+            grid on
             set(gca, 'FontSize', 15);
             set(gca, 'FontName', "Arial")
             if i == numState-10
@@ -252,6 +270,7 @@ switch flag
             % xline(1,'k--', 'LineWidth',1);
             ylabel(labels(i),"Interpreter","latex");
             set(get(gca,'ylabel'),'rotation',0);
+            grid on
             set(gca, 'FontSize', 15);
             set(gca, 'FontName', "Arial")
             if i == numState-5
@@ -271,6 +290,7 @@ switch flag
             % xline(1,'k--', 'LineWidth',1);
             ylabel(labels(i),"Interpreter","latex");
             set(get(gca,'ylabel'),'rotation',0);
+            grid on
             set(gca, 'FontSize', 15);
             set(gca, 'FontName', "Arial")
             if i == numState
@@ -285,19 +305,21 @@ function plot_endeffector(x,refs)
     refClr = "blue";
     figure('Position',[500,100,800,800]);
     tiledlayout("vertical","TileSpacing","tight")
-    plot(x(:,1),x(:,2),'b-o','LineWidth',2);
+    plot(x(:,1),x(:,2),'Color',refClr,'LineWidth',2);
     if refs ~= 0
         hold on
-        plot(refs(:,1),refs(:,2),'*','LineWidth',2);
+        plot(refs(:,1),refs(:,2),'m:','LineWidth',2);
     end
     axis padded
+    grid on
+    legend("Ground Truth","Reference Trajectory","Location","best","FontName","Arial",'FontSize',15);
+    % title('End Effector Path')
     % xline(1,'k--','LineWidth',2);
-    ylabel("Y");
-    xlabel("X");
+    ylabel("Y [m]");
+    xlabel("X [m]");
     set(get(gca,'ylabel'),'rotation',0);
     set(gca, 'FontSize', 15);
     set(gca, 'FontName', 'Arial');
-
 end
 
 function [fit]  = fitnessfun(gene, N_monte_carlo,tSpan,Ts_lim,ctrlParams,sysParams) %,Rise_thresh ,POlim,Ts_lim

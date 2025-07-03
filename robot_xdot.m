@@ -34,51 +34,44 @@ function xdot = robot_xdot(x, F, sysParams)
               -((L1*M2+l1*M1)*sin(alv+th1)+b1/2*(M1+M2)*sin(alv)+l2*M2*sin(alv+th1+th2))
               -((L1*M2+l1*M1)*sin(alv+th1)+l2*M2*sin(alv+th1+th2))
               -l2*M2*sin(alv+th1+th2)];
+
     M(:,2) = [0
               M0+M1+M2
               ((L1*M2+l1*M1)*cos(alv+th1)+b1/2*(M1+M2)*cos(alv)+l2*M2*cos(alv+th1+th2))
               ((L1*M2+l1*M1)*cos(alv+th1)+l2*M2*cos(alv+th1+th2))
               l2*M2*cos(alv+th1+th2)];
+
     M(:,3) = [-((M1*l1+L1*M2)*sin(alv+th1)+b1/2*(M1+M2)*sin(alv)+M2*l2*sin(alv+th1+th2))
               ((M1*l1+L1*M2)*cos(alv+th1)+b1/2*(M1+M2)*cos(alv)+M2*l2*cos(alv+th1+th2))
-              (I0+l1^2*M1+b1^2/4*(M1+M2)*cos(alv)^2+b1^2/4*(M1+M2)*sin(alv)^2+(l2^2+L1^2)*M2 ...
-              +b1*(L1*M2+l1*M1)*cos(alv+th1)*cos(alv)+b1*(L1*M2+l1*M1)*sin(alv+th1)*sin(alv) ...
-              +2*L1*l2*M2*cos(th2)+b1*l2*M2*cos(alv+th1+th2)*cos(alv)+b1*l2*M2*sin(alv+th1+th2)*sin(alv))
-              ((l2^2+L1^2)*M2+l1^2*M1+(b1/4-b1/4)*l2*M2*cos(2*alv+th1+th2)+(b1/4+b1/4)*l2*M2*cos(th1+th2) ...
-              +(b1/4+b1/4)*L1*M2*cos(th1)+2*L1*l2*M2*cos(th2)+(b1/4+b1/4)*l1*M1*cos(th1) ...
-              +(b1/4-b1/4)*L1*M2*cos(2*alv+th1)+(b1/4-b1/4)*l1*M1*cos(2*alv+th1)) 
-              l2^2*M2+(b1/4-b1/4)*l2*M2*cos(2*alv+th1+th2)+(b1/4+b1/4)*l2*M2*cos(th1+th2)+L1*l2*M2*cos(th2)];
+              (I0+l1^2*M1+(l2^2+L1^2)*M2+b1^2/4*(M1+M2)+b1*(L1*M2+l1*M1)*cos(th1)+2*L1*l2*M2*cos(th2)+b1*l2*M2*cos(th1+th2))
+              ((l2^2+L1^2)*M2+l1^2*M1+b1/2*l2*M2*cos(th1+th2)+b1/2*(L1*M2+l1*M1)*cos(th1)+2*L1*l2*M2*cos(th2)) 
+              l2^2*M2+b1/2*l2*M2*cos(th1+th2)+L1*l2*M2*cos(th2)];
+
     M(:,4) = [-((M1*l1+L1*M2)*sin(alv+th1)+M2*l2*sin(alv+th1+th2))
               ((M1*l1+L1*M2)*cos(alv+th1)+M2*l2*cos(alv+th1+th2))
-              ((l2^2+L1^2)*M2+l1^2*M1+b1/2*l2*M2*sin(alv+th1+th2)*sin(alv)+b1/2*(L1*M2+l1*M1)*cos(alv+th1)*cos(alv)...
-              +b1/2*(L1*M2+l1*M1)*sin(alv+th1)*sin(alv)+2*L1*l2*M2*cos(th2)+b1/2*l2*M2*cos(alv+th1+th2)*cos(alv))
+              ((l2^2+L1^2)*M2+l1^2*M1+b1/2*l2*M2*cos(th1+th2)+b1/2*(L1*M2*l1*M1)*cos(th1)+2*L1*l2*M2*cos(th2))
               (I1+(l2^2+L1^2)*M2+l1^2*M1+2*L1*l2*M2*cos(th2))
               (l2^2*M2+L1*l2*M2*cos(th2))];
     M(:,5) = [-M2*l2*sin(alv+th1+th2)
               M2*l2*cos(alv+th1+th2)
-              (l2^2*M2+b1/2*l2*M2*sin(alv+th1+th2)*sin(alv)+L1*l2*M2*cos(th2)+b1/2*l2*M2*cos(alv+th1+th2)*cos(alv))
+              (l2^2*M2+b1/2*l2*M2*cos(th1+th2)+L1*l2*M2*cos(th2))
               (l2^2*M2+L1*l2*M2*cos(th2))
               (I2+l2^2*M2)];
     C(:,1:2) = zeros(5,2);
     C(:,3) = [-((M1*l1+M2*L1)*alvd*cos(alv+th1)+b1/2*(M1+M2)*alvd*cos(alv)+M2*l2*alvd*cos(alv+th1+th2))
               -(b1/2*(M1+M2)*alvd*sin(alv)+(M1*l1+M2*L1)*alvd*sin(alv+th1)+M2*l2*alvd*sin(alv+th1+th2))
-              ((b1^2/4-b1^2/4)*(M1+M2)*alvd*cos(alv)*sin(alv)+(b1/2-b1/2)*l2*M2*alvd*sin(2*alv+th1+th2) ...
-              +(b1/2-b1/2)*(M1*l1+M2*L1)*alvd*sin(2*alv+th1))
-              ((b1/4+b1/4)*l2*M2*alvd*sin(th1+th2)+(b1/4+b1/4)*(M1*l1+M2*L1)*alvd*sin(th1)...
-              +(b1/4-b1/4)*(M1*l1+M2*L1)*alvd*sin(2*alv+th1)+(b1/4-b1/4)*l2*M2*alvd*sin(2*alv+th1+th2))
-              ((b1/4+b1/4)*l2*M2*alvd*sin(th1+th2)+L1*l2*M2*alvd*sin(th2)+(b1/4-b1/4)*l2*M2*alvd*sin(2*alv+th1+th2))];
+              0
+              (b1/2*l2*M2*alvd*sin(th1+th2)+b1/2*(M1*l1+M2*L1)*alvd*sin(th1))
+              (b1/2*l2*M2*alvd*sin(th1+th2)+L1*l2*M2*alvd*sin(th2))];
     C(:,4) = [-((M1*l1+M2*L1)*cos(alv+th1)*(2*alvd+th1d)+M2*l2*cos(alv+th1+th2)*(2*alvd+th1d))
               -((M1*l1+M2*L1)*sin(alv+th1)*(2*alvd+th1d)+M2*l2*sin(alv+th1+th2)*(2*alvd+th1d))
-              (b1/2*l2*M2*(2*alvd+th1d)*cos(alv+th1+th2)*sin(alv)-b1/2*l2*M2*(2*alvd+th1d)*sin(alv+th1+th2)*cos(alv) ...
-              +L1*b1/2*M2*(2*alvd+th1d)*cos(alv+th1)*sin(alv)-L1*b1/2*M2*(2*alvd+th1d)*sin(alv+th1)*cos(alv) ...
-              +b1/2*l1*M1*(2*alvd+th1d)*cos(alv+th1)*sin(alv)-b1/2*l1*M1*(2*alvd+th1d)*sin(alv+th1)*cos(alv))
+              -(b1/2*l2*M2*th1d*sin(th1+th2)+b1/2*(L1*M2+l1*M1)*th1d*sin(th1)+b1*l2*M2*alvd*sin(th1+th2)...
+              +b1*(L1*M2+l1*M1)*alvd*sin(th1))
               0
               (L1*l2*M2*sin(th2)*(2*alvd+th1d))];
     C(:,5) = [-M2*l2*cos(alv+th1+th2)*(2*alvd+2*th1d+th2d)
               -M2*l2*sin(alv+th1+th2)*(2*alvd+2*th1d+th2d)
-              (L1*l2*M2*th2d*cos(2*(alv+th1)+th2)+b1/2*l2*M2*(th2d+2*th1d+2*alvd)*cos(alv+th1+th2)*sin(alv) ...
-              -b1/2*l2*M2*(th2d+2*th1d+2*alvd)*sin(alv+th1+th2)*cos(alv)+2*L1*l2*M2*(th1d+alvd)*cos(alv+th1+th2)*sin(alv+th1) ...
-              -2*L1*l2*M2*(th1d+alvd)*sin(alv+th1+th2)*cos(alv+th1))
+              -(b1*l2*M2*sin(th1+th2)*(th2d+2*th1d+2*alvd)+L1*l2*M2*sin(th2)*(th2d+2*th1d+2*alvd))
               -L1*l2*M2*sin(th2)*(2*alvd+2*th1d+th2d)
               0];
     Gmat = [0

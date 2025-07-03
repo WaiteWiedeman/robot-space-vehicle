@@ -35,3 +35,24 @@ y(:,28) = out.yout{24}.Values.Data; % desired vehicle y position
 y(:,29) = out.yout{25}.Values.Data; % desired vehicle pitch angle
 y(:,30) = out.yout{26}.Values.Data; % Th1 desired
 y(:,31) = out.yout{27}.Values.Data; % Th2 desired
+y = select_samples(ctrlParams, t, y);
+end
+
+function ys = select_samples(ctrlParams, t, y)
+    switch ctrlParams.method
+        case "random"
+            indices = randperm(length(t), ctrlParams.numPoints);
+            sortIndices = sort(indices);
+            ys = y(sortIndices,:);
+        case "interval"
+            ts = [t(1)];
+            ys = [y(1,:)];
+            for i = 2:length(t)
+                if t(i)-ts(end) >= ctrlParams.interval
+                    ys = [ys;y(i,:)];
+                end
+            end
+        otherwise
+            ys = y;
+    end
+end

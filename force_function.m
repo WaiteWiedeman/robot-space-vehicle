@@ -31,7 +31,7 @@ function F = force_function(t, x, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om
     % disp("force_function")
    
     if ctrlParams.noise
-        x = x + noise(:,count);
+        x = x.*(ones(size(x)) + noise(:,count));
     end
     
     xv = x(1); % vehicle x position

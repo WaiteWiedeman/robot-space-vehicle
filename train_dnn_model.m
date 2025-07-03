@@ -1,4 +1,4 @@
-function [xTrain,yTrain,layers,options] = train_dnn_model(sampleFile, trainParams)
+function [netTrained, info] = train_dnn_model(sampleFile, trainParams)
 % Train a DNN model for learning dynamics system behvior
     % load samples and prepare training dataset
     ds = load(sampleFile);
@@ -14,13 +14,15 @@ function [xTrain,yTrain,layers,options] = train_dnn_model(sampleFile, trainParam
     for i = 1:numSamples
         data = load(ds.samples{i,1}).state;
         t = data(1,:);
-        x = data(2:16,:);
+        x = data(2:11,:);
+        obj = data(22:25,:);
         for tInit = initTimes
             initIdx = find(t > tInit, 1, 'first');
             x0 = x(:,initIdx);  % Initial state 
+            obj0 = obj(:,initIdx);  % Initial state
             t0 = t(initIdx);    % Start time
             for j = initIdx+1:length(t)
-                xTrain = [xTrain, [x0; t(j)-t0]];
+                xTrain = [xTrain, [x0; obj0; t(j)-t0]];
                 yTrain = [yTrain, x(:,j)];
             end
         end
@@ -30,9 +32,9 @@ function [xTrain,yTrain,layers,options] = train_dnn_model(sampleFile, trainParam
     yTrain = yTrain';
 
     % Create neural network
-    numStates = 15;
+    numStates = 10;
     layers = [
-        featureInputLayer(numStates+1, "Name", "input")
+        featureInputLayer(numStates+5, "Name", "input")
         ];
     
     numMiddle = floor(trainParams.numLayers/2);
@@ -59,10 +61,9 @@ function [xTrain,yTrain,layers,options] = train_dnn_model(sampleFile, trainParam
     
     layers = [
         layers
-        fullyConnectedLayer(numStates, "Name", "output")
-        regressionLayer]; % weightedLossLayer("mse")
+        fullyConnectedLayer(numStates, "Name", "output")]; % weightedLossLayer("mse")
 
-    layers = layerGraph(layers);
+    % layers = layerGraph(layers);
     % plot(lgraph);
     
     options = trainingOptions("adam", ...
@@ -75,5 +76,13 @@ function [xTrain,yTrain,layers,options] = train_dnn_model(sampleFile, trainParam
         LearnRateSchedule = "piecewise", ...
         LearnRateDropFactor = trainParams.lrDropFactor, ...
         LearnRateDropPeriod = trainParams.lrDropEpoch);
+
+    [netTrained, info] = trainnet(xTrain,yTrain,layers,@lossFcn,options);
+end
+
+function loss = lossFcn(Y,T)
+    AEd  = abs(Y-T);  % vector containing the Squared Error xor each observation
+    dataLoss = mean(AEd,"all")/mean(abs(T - mean(T)),"all");
+    loss = dataLoss;
 end
     

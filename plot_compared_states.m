@@ -1,4 +1,5 @@
 function plot_compared_states(t,x,tp,xp,flag,refs)
+Idx = find(t >= 1, 1, 'first');
 labels= ["$x_v$","$y_v$","$\alpha_v$","$\theta_1$","$\theta_2$","$\dot{x}_v$","$\dot{y}_v$","$\dot{\alpha}_v$","$\dot{\theta}_1$","$\dot{\theta}_2$",...
     "$\ddot{x}_v$","$\ddot{y}_v$","$\ddot{\alpha}_v$","$\ddot{\theta}_1$","$\ddot{\theta}_2$"];
 switch flag
@@ -9,8 +10,9 @@ switch flag
         numState = numState(2);
         for i = 1:numState-10
             nexttile
-            plot(t,x(:,i),'b-',tp,xp(:,i),'r--',t,refs(:,i),'k:','LineWidth',2);
+            plot(t,x(:,i),'b-',t,refs(:,i),'k:','LineWidth',2);
             hold on
+            plot(tp(Idx:end),xp(Idx:end,i),'r--','LineWidth',2);
             % xline(1,'k--', 'LineWidth',1);
             if i == 1 || i ==2
                 ylabel(labels(i) + "[m]","Interpreter","latex");
@@ -25,7 +27,7 @@ switch flag
                 xlabel("Time (s)");
             end
         end
-        legend("Ground Truth","Prediction","Reference","Location","eastoutside","FontName","Arial");
+        legend("Ground Truth","Reference Trajectory","Prediction","Location","eastoutside","FontName","Arial");
     case "velocity"
         figure('Position',[500,200,800,800]);
         tiledlayout("vertical","TileSpacing","tight")
@@ -33,8 +35,9 @@ switch flag
         numState = numState(2);
         for i = 6:numState-5
             nexttile
-            plot(t,x(:,i),'b-',tp,xp(:,i),'r--','LineWidth',2);
+            plot(t,x(:,i),'b-','LineWidth',2);
             hold on
+            plot(tp(Idx:end),xp(Idx:end,i),'r--','LineWidth',2);
             % xline(1,'k--', 'LineWidth',1);
             if i == 6 || i == 7
                 ylabel(labels(i) + "[m/s]","Interpreter","latex");
@@ -57,8 +60,9 @@ switch flag
         numState = numState(2);
         for i = 11:numState
             nexttile
-            plot(t,x(:,i),'b-',tp,xp(:,i),'r--','LineWidth',2);
+            plot(t,x(:,i),'b-','LineWidth',2);
             hold on
+            plot(tp(Idx:end),xp(Idx:end,i),'r--','LineWidth',2);
             % xline(1,'k--', 'LineWidth',1);
             if i == 11 || i == 12
                 ylabel(labels(i) + "[m/s/s]","Interpreter","latex");

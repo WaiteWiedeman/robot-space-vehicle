@@ -1,4 +1,4 @@
-function MakeVideo(ctrlParams,sysParams, t, x, ref, tSpan)
+function MakeVideo(ctrlParams,sysParams, t, x, xp, ref, tSpan)
      % Set up video
     v=VideoWriter('robot_animation.avi');
     v.FrameRate=30;
@@ -26,8 +26,15 @@ function MakeVideo(ctrlParams,sysParams, t, x, ref, tSpan)
         hold on
         % Plot one frame...
         [~,~,~,~,xend0,yend0,xend1,yend1,xend2,yend2] = ForwardKinematics(x(n,1:5),sysParams);
-        [h1,h3,h5]=robot_plot_frame(ctrlParams,sysParams,t(n),Ycg,Xcg,alph,xend0,yend0,xend1,yend1,xend2,yend2,ref(n,:));
-
+        [h1,h3]=robot_plot_frame(ctrlParams,sysParams,t(n),Ycg,Xcg,alph,xend0,yend0,xend1,yend1,xend2,yend2,ref(n,:));
+        
+        if sum(xp) ~= 0
+            Xcg_pred = xp(n,1);
+            Ycg_pred = xp(n,2);
+            alph_pred = xp(n,3);
+            [~,~,~,~,xend0,yend0,xend1,yend1,xend2,yend2] = ForwardKinematics(xp(n,1:5),sysParams);
+            h4=robot_plot_frame_prediction(sysParams,Ycg_pred,Xcg_pred,alph_pred,xend0,yend0,xend1,yend1,xend2,yend2);
+        end
         % disErr = Xcg_pred - Xcg;
         % angErr1 = x(n,2) - xp(n,2);
         % angErr2 = x(n,3) - xp(n,3);
@@ -49,7 +56,11 @@ function MakeVideo(ctrlParams,sysParams, t, x, ref, tSpan)
 
         tObj = title("System at "+num2str(t(n))+" second", "FontName", "Arial","FontSize",15);
         tObj.Position(1) = -3.0;
-        legend([h1 h3 h5], "FontName","Arial", "FontSize", 10, 'Position', [0.85, 0.7, 0.04, 0.05]);
+        if sum(xp) ~= 0
+            legend([h1 h3 h4], "FontName","Arial", "FontSize", 15, 'Location', 'best');
+        else
+            legend([h1 h3], "FontName","Arial", "FontSize", 15, 'Location', 'best');
+        end
         frame=getframe(gcf);
         writeVideo(v,frame);
     end

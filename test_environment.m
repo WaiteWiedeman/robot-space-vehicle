@@ -17,13 +17,14 @@ predInterval = tSpan(2);
 %% simulation and prediction
 theta = 2*pi*rand;
 rad = sqrt(rand);
-ctrlParams.refx = ctrlParams.xrange*rad*cos(theta);
-ctrlParams.refy = ctrlParams.yrange*rad*sin(theta);
-ctrlParams.phi = 2*pi*rand;
-ctrlParams.a = 0.25+rand*0.25; % target object horizontal dimension
-ctrlParams.b = 0.25+rand*0.25; % vertical dimension
-x0 = [-1; -1; 0; 0; 0] + [2; 2; 2*pi; 2*pi; 2*pi].*rand(5,1); % th0, th1, th2
-x0 = [x0(1); 0; x0(2); 0; x0(3); 0; x0(4); 0; x0(5); 0]; % th0, th0d, th1, th1d, th2, th2d
+ctrlParams.refx = 1; %ctrlParams.xrange*rad*cos(theta);
+ctrlParams.refy = 1; %ctrlParams.yrange*rad*sin(theta);
+ctrlParams.phi = 0; %2*pi*rand;
+ctrlParams.a = 0.25; %+rand*0.25; % target object horizontal dimension
+ctrlParams.b = 0.25+0.25; % vertical dimension rand*
+% x0 = [-1; -1; 0; 0; 0] + [2; 2; 2*pi; 2*pi; 2*pi].*rand(5,1); % th0, th1, th2
+% x0 = [x0(1); 0; x0(2); 0; x0(3); 0; x0(4); 0; x0(5); 0]; % th0, th0d, th1, th1d, th2, th2d
+x0 = zeros(10,1);
 tic
 y = robot_simulation(tSpan, x0, sysParams, ctrlParams);
 tEnd = toc;
@@ -46,7 +47,7 @@ plot_endeffector(t,[xend yend],[xpend ypend],y(:,22:23)) %y(:,15:16)
 % make image and video
 % tPred = [1,25];
 % MakeImage(ctrlParams, sysParams, t, x, xp, ref, tPred)
-% MakeImage(ctrlParams, sysParams, t, x, xp, ref, [tPred(1) 10])
+MakeImage(ctrlParams, sysParams, t, x, xp, ref, [tPred(1) 10])
 % MakeVideo(ctrlParams, sysParams, t, x, xp, ref,[xend yend],[xpend ypend], tPred)
 disp(mean(rmseErr,'all'))
 % disp(Predtime)
@@ -54,8 +55,8 @@ disp(tEnd)
 
 %% evaluate for four states
 tSpan = [0,20];
-predInterval = 20;
-numCase = 1;
+predInterval = tSpan(2);
+numCase = 20;
 numTime = 500;
 [avgErr,errs,tPred,tSim] = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, trainParams.type,1,1);
 % avgErr = evaluate_model_with_4_states(net, sysParams, ctrlParams, trainParams, f1Max, tSpan, predInterval, numCase, numTime, trainParams.type);
@@ -137,13 +138,13 @@ set(gca,"FontName","Arial", "FontSize", 15);
 
 %% functions
 function plot_endeffector(t,x,xp,refs)
+    Idx = find(t >= 1, 1, 'first');
     refClr = "blue";
     figure('Position',[500,100,800,800]);
     tiledlayout("vertical","TileSpacing","tight")
     plot(x(:,1),x(:,2),'Color',refClr,'LineWidth',2);
     hold on 
-    plot(xp(:,1),xp(:,2),'r--','LineWidth',2)
-    Idx = find(t >= 1, 1, 'first');
+    plot(xp(Idx:end,1),xp(Idx:end,2),'r--','LineWidth',2)
     if refs ~= 0
         hold on
         plot(refs(:,1),refs(:,2),'m:','LineWidth',2);
@@ -152,8 +153,8 @@ function plot_endeffector(t,x,xp,refs)
     plot(xp(Idx,1),xp(Idx,2),'Marker',"o",'MarkerFaceColor','g','MarkerSize',10)
     axis padded
     grid on
-    legend("Ground Truth","Prediction","Reference Trajectory","Predictions Start (1 sec)","Location","best","FontName","Arial",'FontSize',10);
-    title('End Effector Path')
+    legend("Ground Truth","Prediction","Reference Trajectory","Predictions Start (1 sec)","Location","best","FontName","Arial",'FontSize',15);
+    % title('End Effector Path')
     % xline(1,'k--','LineWidth',2);
     ylabel("Y [m]");
     xlabel("X [m]");
