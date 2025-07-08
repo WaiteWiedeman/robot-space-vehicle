@@ -93,10 +93,10 @@ function loss = lossFcn(Y,T,trainParams,sysParams)
     physicLoss = mean(AEp,"all")/mean(abs(fTarget - mean(fTarget)),"all");
     % disp(physicLoss)
     % End Effector loss
-    [~,~,~,~,xend0,yend0,xend1,yend1,xend2,yend2] = ForwardKinematics(Y(1:5),sysParams);
-    [~,~,~,~,xendTarget0,yendTarget0,xendTarget1,yendTarget1,xendTarget2,yendTarget2] = ForwardKinematics(T(1:5),sysParams);
-    endEff = [xend0;yend0;xend1;yend1;xend2;yend2];
-    endEffTarget = [xendTarget0;yendTarget0;xendTarget1;yendTarget1;xendTarget2;yendTarget2];
+    [~,~,~,~,xend0,yend0,xend1,yend1,xend2,yend2] = ForwardKinematics(extractdata(Y(1:5,:))',sysParams);
+    [~,~,~,~,xendTarget0,yendTarget0,xendTarget1,yendTarget1,xendTarget2,yendTarget2] = ForwardKinematics(extractdata(T(1:5,:))',sysParams);
+    endEff = [xend0 yend0 xend1 yend1 xend2 yend2];
+    endEffTarget = [xendTarget0 yendTarget0 xendTarget1 yendTarget1 xendTarget2 yendTarget2];
     % endEffloss = mape(endEff,endEffTarget,"all");
     AEe  = abs(endEff-endEffTarget);  % vector containing the Squared Error xor each observation
     endEffloss = mean(AEe,"all")/mean(abs(endEffTarget - mean(endEffTarget)),"all");
