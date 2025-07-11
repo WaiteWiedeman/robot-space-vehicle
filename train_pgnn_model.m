@@ -82,6 +82,8 @@ function [netTrained, info] = train_pgnn_model(sampleFile, trainParams, sysParam
 end
 
 function loss = lossFcn(Y,T,trainParams,sysParams)
+    disp(Y)
+    disp(T)
     AEd  = abs(Y-T);  % vector containing the Squared Error xor each observation
     dataLoss = mean(AEd,"all")/mean(abs(T - mean(T)),"all");
     % physics loss
@@ -93,8 +95,8 @@ function loss = lossFcn(Y,T,trainParams,sysParams)
     physicLoss = mean(AEp,"all")/mean(abs(fTarget - mean(fTarget)),"all");
     % disp(physicLoss)
     % End Effector loss
-    [~,~,~,~,xend0,yend0,xend1,yend1,xend2,yend2] = ForwardKinematics(extractdata(Y(1:5,:))',sysParams);
-    [~,~,~,~,xendTarget0,yendTarget0,xendTarget1,yendTarget1,xendTarget2,yendTarget2] = ForwardKinematics(extractdata(T(1:5,:))',sysParams);
+    [~,~,~,~,xend0,yend0,xend1,yend1,xend2,yend2] = ForwardKinematics(Y(1:5,:),sysParams);
+    [~,~,~,~,xendTarget0,yendTarget0,xendTarget1,yendTarget1,xendTarget2,yendTarget2] = ForwardKinematics(T(1:5,:),sysParams);
     endEff = [xend0 yend0 xend1 yend1 xend2 yend2];
     endEffTarget = [xendTarget0 yendTarget0 xendTarget1 yendTarget1 xendTarget2 yendTarget2];
     % endEffloss = mape(endEff,endEffTarget,"all");
