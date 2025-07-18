@@ -122,17 +122,17 @@ function output = train_pinn_model(sampleFile, trainParams,sysParams,ctrlParams,
     save("model\temp", 'net','monitor');
     output.trainedNet = net;
 
-    ctrlParams.solver = "nonstifflr"; % "stiff" or "normal"
-    ctrlParams.method = "origin"; % random, interval, origin
-    tSpan = [0,20];
-    predInterval = tSpan(2);
-    numCase = 20;
-    numTime = 500;
-    initTime = 1;
-    [avgErr,~,~,~] = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, trainParams.type,0, initTime);
+    % ctrlParams.solver = "nonstifflr"; % "stiff" or "normal"
+    % ctrlParams.method = "origin"; % random, interval, origin
+    % tSpan = [0,20];
+    % predInterval = tSpan(2);
+    % numCase = 20;
+    % numTime = 500;
+    % initTime = 1;
+    % [avgErr,~,~,~] = evaluate_model(net, sysParams, ctrlParams, trainParams, tSpan, predInterval, numCase, numTime, trainParams.type,0, initTime);
     % avgErr = 5;
     updateInfo(monitor,...
-        TestAccuracy=avgErr);
+        TestAccuracy=0);
 end
 
 %%
@@ -356,8 +356,8 @@ function [fY,fT,endEff,endEffTarget] = physicsloss(T,Y,Z,ids,sysParams)
     fT = physics_law([Y;q1ddnT;q2ddnT;q3ddnT;q4ddnT;q5ddnT],sysParams);
 % disp(fY)
 % disp(fT)
-    [~,~,~,~,xend0,yend0,xend1,yend1,xend2,yend2] = ForwardKinematics(Z(1:5,:),sysParams);
-    [~,~,~,~,xendTarget0,yendTarget0,xendTarget1,yendTarget1,xendTarget2,yendTarget2] = ForwardKinematics(Y(1:5,:),sysParams);
+    [~,~,~,~,xend0,yend0,xend1,yend1,xend2,yend2] = ForwardKinematics(Z(1:5,:),sysParams,"DL");
+    [~,~,~,~,xendTarget0,yendTarget0,xendTarget1,yendTarget1,xendTarget2,yendTarget2] = ForwardKinematics(Y(1:5,:),sysParams,"DL");
 
     endEff = [xend0; yend0; xend1; yend1; xend2; yend2];
     endEffTarget = [xendTarget0; yendTarget0; xendTarget1; yendTarget1; xendTarget2; yendTarget2];
@@ -371,4 +371,3 @@ function [X,T] = myMiniBatch(xBatch,yBatch)
         T = [T, cell2mat(yBatch{i})];
     end
 end
-    

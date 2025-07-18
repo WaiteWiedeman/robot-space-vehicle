@@ -1,4 +1,4 @@
-function xdot = robot_xdot(x, F, sysParams)
+function xdot = robot_xdot(x, F, T_f, sysParams)
     xv = x(1); % vehicle x position
     xvd = x(2); % vehicle x velocity
     yv = x(3); % vehicle y position
@@ -85,7 +85,10 @@ function xdot = robot_xdot(x, F, sysParams)
           th1d
           th2d];
 
+    F = F + [0;0;0;T_f(1);T_f(2)];
+
     B = F - C*qd - Gmat;
+
     qdd = linsolve(M,B);
 
     xdot = zeros(10,1);

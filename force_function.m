@@ -1,6 +1,5 @@
 function F = force_function(t, x, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om2, noise, ctrlParams)
     persistent ti e1 e2 e3 e4 e5 Fp count
-    % disp(t)
     if t == 0 || isempty(ti)
         ti = t;
         Fp = zeros(5,1);
@@ -9,26 +8,20 @@ function F = force_function(t, x, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om
         e3 = [];
         e4 = [];
         e5 = [];
-        count = 1;
+        count = 0;
     else
         ti(end+1) = t;
     end 
 
-    if count == length(noise)
-        count = 0;
-    end
-    % if length(ti)>2
-    %     if ti(end)-ti(end-1) > 0.001
-    %         count = count + 1;
-    %     end
-    % end
     count = count + 1;
-    % disp(count)
-    % disp(size(ti))
+
+    if count > length(noise)
+        count = 1;
+    end
+
     Fg = zeros(5,1);
     Flim = ctrlParams.Flim;
     Tlim = ctrlParams.Tlim;
-    % disp("force_function")
    
     if ctrlParams.noise
         x = x.*(ones(size(x)) + noise(:,count));
@@ -95,13 +88,7 @@ function F = force_function(t, x, Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om
     elseif Fg(5) < -Tlim
         Fg(5) = -Tlim;
     end
-    % disp(F)
-    % u_max = ctrlParams.Pf; % *ones(5,1);
-    % F(1) = Fp(1) + clip(Fg(1)-Fp(1),-u_max,u_max); 
-    % F(2) = Fp(2) + clip(Fg(2)-Fp(2),-u_max,u_max);
-    % F(3) = Fp(3) + clip(Fg(3)-Fp(3),-u_max,u_max);
-    % F(4) = Fp(4) + clip(Fg(4)-Fp(4),-u_max,u_max);
-    % F(5) = Fp(5) + clip(Fg(5)-Fp(5),-u_max,u_max);
+
     F = Fp + ctrlParams.Pf*(Fg-Fp);
     Fp = F;
 end

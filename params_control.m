@@ -20,7 +20,7 @@ function params = params_control()
     params.noise = 1;
     params.sigma = 2e-2;
     params.refrad = 0.5; % radius of reference trajectory 
-    params.friction = "andersson"; % none, smooth, andersson, specker
+    params.friction = 0; 
     params.fixedTimeStep = 0; % 0 for varying time step, else for fixed stime step in simulation e.g., 1e-2
     % To many data points will be generated if using default ode options
     % To select small set of data for training with different methods.

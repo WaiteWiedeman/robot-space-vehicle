@@ -26,7 +26,7 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
             % opts = odeset('OutputFcn',@(t, y, flag) myOutputFcn(t, y, flag, startTime, stopTime));
             opts = odeset(); % ,'OutputFcn',@odeplot 'RelTol',1e-2,
             if show
-                figure;
+                figure('Position',[500,200,800,800]);
                 opts = odeset(opts,'OutputFcn',@odeplot);
             end
             [t,x] = ode45(@(t,x) robot_system(t, x, noise, sysParams, ctrlParams), tSpan, x0,opts);
@@ -38,7 +38,7 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
             end
             [t,x] = ode15s(@(t,x) robot_system(t, x, noise, sysParams, ctrlParams), tSpan, x0,opts); 
         case "stifflr"
-            opts = odeset('RelTol',1e-4,'AbsTol',1e-5); 
+            opts = odeset(); %'RelTol',1e-4,'AbsTol',1e-5
             if show
                 figure;
                 opts = odeset(opts,'OutputFcn',@odeplot);
@@ -56,12 +56,17 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
     end
     % [t,x] = select_samples(ctrlParams, t, x);
     numTime = length(t);
-    y = zeros(numTime,41);
+    y = zeros(numTime,43);
     for i = 1 : numTime
         [Xd, Yd, Xdd, Ydd, Xv, Xvd, Yv, Yvd] = referenceTrajectory(t(i), ctrlParams,sysParams);
         [Alv,Th1,Th2,Alvd,Om1,Om2] = InverseKinematics(Xd,Yd,Xdd,Ydd,Xv,Xvd,Yv,Yvd);
         F = force_function(t(i), x(i,:)', Xv, Xvd, Yv, Yvd, Alv, Th1, Th2, Alvd, Om1, Om2, noise, ctrlParams);
-        xdot = robot_xdot(x(i,:), F, sysParams);
+        if ctrlParams.friction
+            T_f = friction(x(i,8),x(i,10),sysParams);
+        else
+            T_f = zeros(2,1);
+        end
+        xdot = robot_xdot(x(i,:), F, T_f, sysParams);
         y(i,1) = t(i); % t
         y(i,2) = x(i, 1); % xv
         y(i,3) = x(i, 3); % yv
@@ -93,16 +98,19 @@ function y = robot_simulation(tSpan, x0, sysParams, ctrlParams)
         y(i,29) = Alv; % desired vehicle pitch angle
         y(i,30) = Th1; % Th1 desired
         y(i,31) = Th2; % Th2 desired 
-        if i <= 10000
-            y(i,32:41) = noise(:,i).*x(i,:)'; % noise
-        elseif i > 10000
+        % if i <= 10000
+        %     y(i,32:41) = noise(:,i).*x(i,:)'; % noise
+        % elseif i > 10000
             if mod(i,10000) == 0
-                div = 1;
+                y(i,32:41) = noise(:,end).*x(i,:)'; % noise
             else
                 div = floor(i/10000);
+                y(i,32:41) = noise(:,i-div*10000).*x(i,:)'; % noise
             end
-            y(i,32:41) = noise(:,i-div*10000).*x(i,:)'; % noise
-        end
+            
+        % end
+        y(i,42) = T_f(1); % viscous friction applied to joint 1
+        y(i,43) = T_f(2); % viscous friction applied to joint 2
     end
     y = select_samples(ctrlParams, t, y);
 end

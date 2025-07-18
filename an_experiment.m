@@ -7,9 +7,9 @@ clc;
 sysParams = params_system();
 ctrlParams = params_control();
 trainParams = params_training();
-trainParams.numSamples = 1200;
-trainParams.type = "dnn"; % "dnn6","pinn6","dnn9","pinn9"
-trainParams.numLayers = 6;
+trainParams.numSamples = 2000;
+trainParams.type = "pinn"; % "dnn6","pinn6","dnn9","pinn9"
+trainParams.numLayers = 8;
 trainParams.numNeurons = 256;
 trainParams.datasource = "odes";
 % trainParams.numEpochs = 1;
@@ -38,7 +38,7 @@ plot_states(y(:,1),y(:,2:16),"acceleration",y(:,27:31));
 plot_forces(y(:,1),y(:,17:21));
 
 % solve forward kinematics and plot end effector position
-[~,~,~,~,~,~,~,~,xend,yend] = ForwardKinematics(y(:,2:6),sysParams);
+[~,~,~,~,~,~,~,~,xend,yend] = ForwardKinematics(y(:,2:6),sysParams,"normal");
 plot_endeffector([xend yend],y(:,22:23)) %y(:,15:16)
 
 %% train model
@@ -74,6 +74,7 @@ switch trainParams.type
     case "pinn"
         monitor = trainingProgressMonitor;
         output = train_pinn_model(dataFile, trainParams,sysParams,ctrlParams,monitor);
+        info = monitor.MetricData.Loss;
         net = output.trainedNet;
     case "pgnn"
         % [xTrain,yTrain,layers,options] = train_pgnn_model(dataFile, trainParams);
@@ -87,7 +88,7 @@ end
 
 % training with numeric array data
 % trainLoss = info.TrainingLoss;
-save(modelFile, 'net');
+save(modelFile, 'net','info');
 % disp(info)
 % save("trainingoutput",'monitor')
 

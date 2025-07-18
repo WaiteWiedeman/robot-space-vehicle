@@ -32,7 +32,10 @@ x0 = [x0(1); 0; x0(2); 0; x0(3); 0; x0(4); 0; x0(5); 0]; % th0, th0d, th1, th1d,
 % x0 = zeros(10,1); % th0, th0d, th1, th1d, th2, th2d
 
 %% run simulation 
+tic
 y = robot_simulation(tSpan, x0, sysParams, ctrlParams);
+tEnd = toc;
+disp(tEnd)
 
 %% plot states, forces, and states against reference
 % plot states, forces, and states against reference
@@ -42,7 +45,7 @@ plot_states(y(:,1),y(:,2:16),"acceleration",y(:,27:31));
 plot_forces(y(:,1),y(:,17:21));
 
 % solve forward kinematics and plot end effector position
-[~,~,~,~,~,~,~,~,xend,yend] = ForwardKinematics(y(:,2:6),sysParams);
+[~,~,~,~,~,~,~,~,xend,yend] = ForwardKinematics(y(:,2:6),sysParams,"normal");
 plot_endeffector([xend yend],y(:,22:23)) %y(:,15:16)
 
 info1 = lsiminfo(y(:,2),y(:,1));
@@ -67,6 +70,35 @@ legend("$x_v$","$y_v$","$\alpha_v$","$\theta_1$","$\theta_2$","$\dot{x}_v$","$\d
     ,"$\dot{\alpha}_v$","$\dot{\theta}_1$","$\dot{\theta}_2$","Interpreter","latex");
 set(gca, 'FontSize', 15);
 set(gca, 'FontName', 'Arial');
+
+%% torques plot
+t=y(:,1);
+figure('Position',[500,100,800,800]);
+plot(t,y(:,20),'c-',t,y(:,21),'b-',t,y(:,42),'g-',t,y(:,43),'m-','LineWidth',2);
+xlabel("Time (s)");
+ylabel("Torque (N*m)");
+% set(get(gca,'ylabel'),'rotation',0);
+grid on
+set(gca, 'FontSize', 15);
+set(gca, 'FontName', "Arial")
+legend("$\tau_1$","$\tau_2$","$\tau_{f_1}$","$\tau_{f_2}$","Interpreter","latex");
+
+%% viscous friction
+th1d = linspace(-5,5,100);
+th2d = linspace(-5,5,100);
+T_f = zeros(2,length(th1d));
+for i = 1:length(th1d)
+    T_f(:,i) = friction(th1d(i),th2d(i),sysParams);
+end
+figure('Position',[500,100,800,800]);
+plot(th1d,T_f(1,:),'g-',th2d,T_f(2,:),'m-','LineWidth',2);
+xlabel("Angular velocity (rad/s)");
+ylabel("Friction Torque (N*m)");
+% set(get(gca,'ylabel'),'rotation',0);
+grid on
+set(gca, 'FontSize', 15);
+set(gca, 'FontName', "Arial")
+legend("$\tau_{f_1}$","$\tau_{f_2}$","Interpreter","latex");
 
 %% run simscape model and plot states, forces, and states against reference for simscape model
 mdl = "robot_model.slx";
@@ -183,29 +215,43 @@ end
 
 %%
 % q1ddn = gradient(y(:,7),y(:,1));
-q1ddn = rdiff_kalman(y(:,7),y(:,1),[], 'ncp');
-q2ddn = rdiff_kalman(y(:,8),y(:,1),[], 'ncp');
-q3ddn = rdiff_kalman(y(:,9),y(:,1),[], 'ncp');
-q4ddn = rdiff_kalman(y(:,10),y(:,1),[], 'ncp');
-% q5ddn = gradient(y(:,11),y(:,1));
-q5ddn = rdiff_kalman(y(:,11),y(:,1),[], 'ncp');
-q1ddn2 = 4*del2(y(:,2),y(:,1));
-figure;
-plot(y(:,1),y(:,12),y(:,1),q1ddn)
+% q1ddn = rdiff_kalman(y(:,7),y(:,1),[], 'ncp');
+% q2ddn = rdiff_kalman(y(:,8),y(:,1),[], 'ncp');
+% q3ddn = rdiff_kalman(y(:,9),y(:,1),[], 'ncp');
+% q4ddn = rdiff_kalman(y(:,10),y(:,1),[], 'ncp');
+% % q5ddn = gradient(y(:,11),y(:,1));
+% q5ddn = rdiff_kalman(y(:,11),y(:,1),[], 'ncp');
+q1d = interp1(y(:,1), y(:,7), y(:,1), 'spline');
+q1dd = gradient(q1d, y(:,1));
+q2d = interp1(y(:,1), y(:,8), y(:,1), 'spline');
+q2dd = gradient(q2d, y(:,1));
+q3d = interp1(y(:,1), y(:,9), y(:,1), 'spline');
+q3dd = gradient(q3d, y(:,1));
+q4d = interp1(y(:,1), y(:,10), y(:,1), 'spline');
+q4dd = gradient(q4d, y(:,1));
+q5d = interp1(y(:,1), y(:,11), y(:,1), 'spline');
+q5dd = gradient(q5d, y(:,1));
+figure('Position',[500,200,800,800]);
+plot(y(:,1),y(:,12),y(:,1),q1dd)
 legend("real","numerical")
-figure;
-plot(y(:,1),y(:,13),y(:,1),q2ddn)
+figure('Position',[500,200,800,800]);
+plot(y(:,1),y(:,13),y(:,1),q2dd)
 legend("real","numerical")
-figure;
-plot(y(:,1),y(:,14),y(:,1),q3ddn)
+figure('Position',[500,200,800,800]);
+plot(y(:,1),y(:,14),y(:,1),q3dd)
 legend("real","numerical")
-figure;
-plot(y(:,1),y(:,15),y(:,1),q4ddn)
+figure('Position',[500,200,800,800]);
+plot(y(:,1),y(:,15),y(:,1),q4dd)
 legend("real","numerical")
-figure;
-plot(y(:,1),y(:,16),y(:,1),q5ddn) % ,y(:,1),grad 0.5*q1ddn+0.5*q1ddn2
+figure('Position',[500,200,800,800]);
+plot(y(:,1),y(:,16),y(:,1),q5dd) % ,y(:,1),grad 0.5*q1ddn+0.5*q1ddn2
 % plot(y(:,1),smoothdata(y(:,12)),y(:,1),smoothdata(grad),y(:,1),smoothdata(grad2))
 legend("real","numerical")
+disp("q1dd error: "+num2str(mean(y(:,12)-q1dd,'all')))
+disp("q2dd error: "+num2str(mean(y(:,13)-q2dd,'all')))
+disp("q3dd error: "+num2str(mean(y(:,14)-q3dd,'all')))
+disp("q4dd error: "+num2str(mean(y(:,15)-q4dd,'all')))
+disp("q5dd error: "+num2str(mean(y(:,16)-q5dd,'all')))
 
 %%
 figure('Position',[500,200,800,800]);
