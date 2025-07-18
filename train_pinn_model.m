@@ -234,6 +234,7 @@ function [loss, gradients] = modelLoss(net, X, T, sysParams, trainParams)
 
     % disp(size(X))
     [fY,fT,endEff,endEffTarget] = physicsloss(X(15,:),T,Z,boundaryIds,sysParams);
+
     % disp(size(fY))
     % disp(size(fT))
     % disp(size(endEff))
@@ -251,9 +252,9 @@ function [loss, gradients] = modelLoss(net, X, T, sysParams, trainParams)
     % endEffloss = mape(endEffPreds, endEffTargets,"all");
     AEe  = abs(endEffPreds-endEffTargets);  % vector containing the Squared Error xor each observation
     endEffloss = mean(AEe,"all")/mean(abs(endEffTargets - mean(endEffTargets)),"all");  % Mean-Squared Error
-    disp(dataLoss)
-    disp(physicLoss)
-    disp(endEffloss)
+    % disp(dataLoss)
+    % disp(physicLoss)
+    % disp(endEffloss)
     loss = (1.0-trainParams.alpha-trainParams.beta)*dataLoss + trainParams.alpha*physicLoss + trainParams.beta*endEffloss;
     % loss = dataLoss;
     gradients = dlgradient(loss, net.Learnables);
@@ -285,11 +286,11 @@ function [fY,fT,endEff,endEffTarget] = physicsloss(T,Y,Z,ids,sysParams)
     q4ddn = gradient(q4d,T);
     q5ddn = gradient(q5d,T);
     % accelerations calulated as gradient of velocity prediction
-    q1ddn2 = 4*del2(q1,T);
-    q2ddn2 = 4*del2(q2,T);
-    q3ddn2 = 4*del2(q3,T);
-    q4ddn2 = 4*del2(q4,T);
-    q5ddn2 = 4*del2(q5,T);
+    % q1ddn2 = 4*del2(q1,T);
+    % q2ddn2 = 4*del2(q2,T);
+    % q3ddn2 = 4*del2(q3,T);
+    % q4ddn2 = 4*del2(q4,T);
+    % q5ddn2 = 4*del2(q5,T);
     % target gradients
     % accelerations calulated as gradient of velocity prediction
     q1ddnT = gradient(Y(6,:),T);
@@ -298,11 +299,11 @@ function [fY,fT,endEff,endEffTarget] = physicsloss(T,Y,Z,ids,sysParams)
     q4ddnT = gradient(Y(9,:),T);
     q5ddnT = gradient(Y(10,:),T);
     % accelerations calulated as gradient of velocity prediction
-    q1ddn2T = 4*del2(Y(1,:),T);
-    q2ddn2T = 4*del2(Y(2,:),T);
-    q3ddn2T = 4*del2(Y(3,:),T);
-    q4ddn2T = 4*del2(Y(4,:),T);
-    q5ddn2T = 4*del2(Y(5,:),T);
+    % q1ddn2T = 4*del2(Y(1,:),T);
+    % q2ddn2T = 4*del2(Y(2,:),T);
+    % q3ddn2T = 4*del2(Y(3,:),T);
+    % q4ddn2T = 4*del2(Y(4,:),T);
+    % q5ddn2T = 4*del2(Y(5,:),T);
 % disp(q1ddn)
     % remove values at boundary 
     q1(ids) = [];
@@ -329,11 +330,11 @@ function [fY,fT,endEff,endEffTarget] = physicsloss(T,Y,Z,ids,sysParams)
     q4ddn(ids) = [];
     q5ddn(ids) = [];
 
-    q1ddn2(ids) = [];
-    q2ddn2(ids) = [];
-    q3ddn2(ids) = [];
-    q4ddn2(ids) = [];
-    q5ddn2(ids) = [];
+    % q1ddn2(ids) = [];
+    % q2ddn2(ids) = [];
+    % q3ddn2(ids) = [];
+    % q4ddn2(ids) = [];
+    % q5ddn2(ids) = [];
 
     q1ddnT(ids) = [];
     q2ddnT(ids) = [];
@@ -341,26 +342,25 @@ function [fY,fT,endEff,endEffTarget] = physicsloss(T,Y,Z,ids,sysParams)
     q4ddnT(ids) = [];
     q5ddnT(ids) = [];
 
-    q1ddn2T(ids) = [];
-    q2ddn2T(ids) = [];
-    q3ddn2T(ids) = [];
-    q4ddn2T(ids) = [];
-    q5ddn2T(ids) = [];
+    % q1ddn2T(ids) = [];
+    % q2ddn2T(ids) = [];
+    % q3ddn2T(ids) = [];
+    % q4ddn2T(ids) = [];
+    % q5ddn2T(ids) = [];
 
     Y(:,ids) = [];
     Z(:,ids) = [];
 
     fY = physics_law([q1;q2;q3;q4;q5;(0.5*q1d+0.5*q1dn);(0.5*q2d+0.5*q2dn);(0.5*q3d+0.5*q3dn);(0.5*q4d+0.5*q4dn);(0.5*q5d+0.5*q5dn);...
-        (0.5*q1ddn2+0.5*q1ddn);(0.5*q2ddn2+0.5*q2ddn);(0.5*q3ddn2+0.5*q3ddn);(0.5*q4ddn2+0.5*q4ddn);(0.5*q5ddn2+0.5*q5ddn)],sysParams);
-    fT = physics_law([Y;(0.5*q1ddn2T+0.5*q1ddnT);(0.5*q2ddn2T+0.5*q2ddnT);(0.5*q3ddn2T+0.5*q3ddnT);(0.5*q4ddn2T+0.5*q4ddnT);...
-        (0.5*q5ddn2T+0.5*q5ddnT)],sysParams);
+        q1ddn;q2ddn;q3ddn;q4ddn;q5ddn],sysParams);
+    fT = physics_law([Y;q1ddnT;q2ddnT;q3ddnT;q4ddnT;q5ddnT],sysParams);
 % disp(fY)
 % disp(fT)
-    [~,~,~,~,xend0,yend0,xend1,yend1,xend2,yend2] = ForwardKinematics(transpose(Z(1:5,:)),sysParams);
-    [~,~,~,~,xendTarget0,yendTarget0,xendTarget1,yendTarget1,xendTarget2,yendTarget2] = ForwardKinematics(transpose(Y(1:5,:)),sysParams);
+    [~,~,~,~,xend0,yend0,xend1,yend1,xend2,yend2] = ForwardKinematics(Z(1:5,:),sysParams);
+    [~,~,~,~,xendTarget0,yendTarget0,xendTarget1,yendTarget1,xendTarget2,yendTarget2] = ForwardKinematics(Y(1:5,:),sysParams);
 
-    endEff = [xend0 yend0 xend1 yend1 xend2 yend2];
-    endEffTarget = [xendTarget0 yendTarget0 xendTarget1 yendTarget1 xendTarget2 yendTarget2];
+    endEff = [xend0; yend0; xend1; yend1; xend2; yend2];
+    endEffTarget = [xendTarget0; yendTarget0; xendTarget1; yendTarget1; xendTarget2; yendTarget2];
 end
 
 function [X,T] = myMiniBatch(xBatch,yBatch)
